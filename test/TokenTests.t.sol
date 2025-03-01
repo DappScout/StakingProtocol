@@ -9,7 +9,7 @@ import {DeployTokenERC20} from "../script/DeployProtocol.s.sol";
 contract TokenTest is Test {
     ScoutToken scoutToken;
 
-    address public Owner;
+    address public owner;
     address public userOne;
     address public userTwo;
     address public userThree;
@@ -18,21 +18,22 @@ contract TokenTest is Test {
     uint256 public initial_supply;
 
     function setUp() public {
-        Owner = address(1);
-        userOne = address(2);
-        userTwo = address(3);
-        userThree = address(4);
-        userFour = address(5);
+        owner = msg.sender;
+        userOne = makeAddr("userone");
+        userTwo = makeAddr("usertwo");
+        userThree = makeAddr("userthree");
+        userFour = makeAddr("userfour");
 
         initial_supply = 1000;
 
-        vm.deal(Owner, 100 ether);
-        vm.prank(Owner);
-        scoutToken = new ScoutToken(initial_supply);
+        vm.deal(owner, 100 ether);
+        vm.prank(owner);
+        DeployTokenERC20 deployToken = new DeployTokenERC20();
+        scoutToken = deployToken.runTokenERC20(initial_supply);
     }
 
     function test_Minting1000Tokens() public {
-        vm.deal(Owner, 100 ether);
+        vm.deal(owner, 100 ether);
 
         assertEq(
             scoutToken.totalSupply(),
