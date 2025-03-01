@@ -9,5 +9,5 @@ import {ScoutToken} from "./TokenERC20.sol";
 contract StakingContract is Ownable(msg.sender), Pausable {
     uint256 test;
 
-    constructor(address initialOwner) {}
+    constructor(address _initialOwner) {}
 }

@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 /// @dev Using OpenZeppelin's ERC20 implementation
 
 contract ScoutToken is ERC20 {
-    constructor(uint256 initialSupply) ERC20("ScoutToken", "SCT") {
-        _mint(msg.sender, initialSupply * (10 ** decimals()));
+    constructor(uint256 _initialSupply) ERC20("ScoutToken", "SCT") {
+        _mint(msg.sender, _initialSupply * (10 ** decimals()));
     }
 }
