@@ -26,14 +26,16 @@ contract TokenTest is Test {
 
         initial_supply = 1000;
 
-        vm.deal(owner, 100 ether);
-        vm.prank(owner);
+        hoax(owner, 100 ether);
         DeployTokenERC20 deployToken = new DeployTokenERC20();
         scoutToken = deployToken.runTokenERC20(initial_supply);
     }
 
-    function test_Minting1000Tokens() public {
-        vm.deal(owner, 100 ether);
+/*//////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////*/
+
+    function test_Minting1000Tokens() public view {
 
         assertEq(
             scoutToken.totalSupply(),
@@ -41,4 +43,12 @@ contract TokenTest is Test {
             "Different amount of minted token than expected!"
         );
     }
+
+
+
+
+
+/*//////////////////////////////////////////////////////////////////
+                            
+//////////////////////////////////////////////////////////////////*/
 }
