@@ -27,34 +27,27 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     /////////////////////VARIABLES/////////////////////
     ///////////////////////////////////////////////////
 
-    /**
-     * @notice A stake variable to track whole amount staked
-     */
+    ///@notice A stake variable to track whole amount staked
+
     IERC20 public immutable i_stakingToken;
 
-    /**
-     * @notice A stake variable to track whole amount staked
-     */
+    ///@notice A stake variable to track whole amount staked
+
     uint256 internal totalStakedAmount;
 
-    /**
-     * @notice Parameter that defines a reward rate per second
-     */
+    ///@notice Parameter that defines a reward rate per second
     uint256 internal rewardRate;
 
     uint256 internal lastBlockNumber;
 
     ////////////////////////Mappings///////////////////////////
-    /**
-     * @notice
-     */
+
+    ///@notice
     mapping(address user => uint256 stakedAmount) private stakes;
 
     mapping(address user => uint256 paidRewards) private paidRewards;
 
-    /**
-     * @notice
-     */
+    ///@notice
     mapping(address => uint256) private rewardDebt;
 
     mapping(address => uint256) private rewards;
@@ -97,10 +90,11 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
      *
      */
     function stake(uint256 _amount) public whenNotPaused nonReentrant {
-        // if(_amount < minimalStakeAmount) revert StakingContract_WrongAmountGiven();
-
+        if (_amount < minimalStakeAmount) revert StakingContract_WrongAmountGiven();
         calculateRewards(msg.sender);
         stakes[msg.sender] = stakes[msg.sender] + _amount;
+
+        emit Staked(msg.sender, _amount);
     }
 
     /**
@@ -133,7 +127,6 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     /* Concept:
     - should this be executed at the begining of every transaction?
     - This
-
     */
     function calculateRewards(address _user) private {
         uint256 rewardPerToken = (rewardRate / totalStakedAmount) * (block.number - lastBlockNumber);
