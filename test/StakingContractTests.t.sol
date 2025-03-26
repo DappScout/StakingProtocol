@@ -26,6 +26,10 @@ contract StakingProtocolTest is Test {
         stakingContract = deployStakingContract.runStakingProtocol(owner);
     }
 
+    /*///////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////Pause test//////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////*/
+
     function userPause(address user) public {
         vm.startPrank(user);
         stakingContract.pause();
@@ -46,6 +50,7 @@ contract StakingProtocolTest is Test {
     And any subsequent calls to "stake", "unstake", or "claimRewards" should revert with "Contract is paused"
     */
     function testOwnerPausingTheContract() public {
+        //setup
         assertEq(stakingContract.paused(), false, "Protocol is paused!");
         vm.recordLogs();
         //act
@@ -62,6 +67,7 @@ contract StakingProtocolTest is Test {
     }
 
     function testOwnerUnpausingTheContract() public {
+        //setup
         vm.recordLogs();
         assertEq(stakingContract.paused(), false, "Protocol is paused!");
         userPause(owner);
@@ -83,6 +89,7 @@ contract StakingProtocolTest is Test {
     }
 
     function testUserPausingTheContract() public {
+        //setup
         assertEq(stakingContract.paused(), false, "Protocol is paused!");
         vm.recordLogs();
 
@@ -91,10 +98,12 @@ contract StakingProtocolTest is Test {
         userPause(userOne);
 
         //check
+        Vm.Log[] memory entries = vm.getRecordedLogs();
         assertEq(stakingContract.paused(), false, "Protocol is paused!");
     }
 
     function testUserUnpausingTheContract() public {
+        //setup
         vm.recordLogs();
         assertEq(stakingContract.paused(), false, "Protocol is paused!");
         userPause(owner);
@@ -105,6 +114,11 @@ contract StakingProtocolTest is Test {
         userUnpause(userOne);
 
         //check
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        assertEq(entries.length, 1, "One log was expected!");
+        bytes32 expectedEvent = keccak256("Paused(address)");
+        assertEq(entries[0].topics[0], expectedEvent, "Paused event was not emmited!");
+
         assertEq(stakingContract.paused(), true, "Protocol is unpaused!");
     }
 
@@ -115,5 +129,7 @@ contract StakingProtocolTest is Test {
 
     function testUnstakeWhilePaused() public {}
 
-    function testclaimRewardsPaused() public {}
+    function testClaimRewardsWhilePaused() public {}
+
+    function testPauseWhilePaused() public {}
 }
