@@ -31,7 +31,51 @@ contract StakingProtocolTest is Test{
 
     }
 
-    
+    function userPause(address user) public{
+        vm.startPrank(user);
+        stakingContract.pause();
+        vm.stopPrank();
+    }
 
+
+    function userUnpause(address user) public{
+        vm.startPrank(user);
+        stakingContract.unpause();
+        vm.stopPrank();
+    }
+
+
+    /*
+    Scenario: Owner pauses the contract
+    Given the Staking contract is active
+    When the owner calls "pause()"
+    Then the contract should log a "Paused" event
+    And any subsequent calls to "stake", "unstake", or "claimRewards" should revert with "Contract is paused"
+    */
+    function testOwnerPausingTheContract() public{
+
+        assertEq(stakingContract.paused(), false, "Protocol is paused!");
+        
+        //act
+
+        userPause(owner);
+
+        //check
+        assertEq(stakingContract.paused(), true, "Protocol isnt paused!");
+    }
+
+    function testOwnerUnpausingTheContract() public{
+
+        assertEq(stakingContract.paused(), false, "Protocol is paused!");
+        userPause(owner);
+        assertEq(stakingContract.paused(), true, "Protocol isnt paused!");
+        
+        //act
+
+        userUnpause(owner);
+
+        //check
+        assertEq(stakingContract.paused(), false, "Protocol is paused!");
+    }
 
 }

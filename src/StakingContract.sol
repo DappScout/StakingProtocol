@@ -1,14 +1,20 @@
 // SPDX-License-identifier: MIT
 pragma solidity 0.8.28;
 
-import "@openzeppelin/contracts/utils/Pausable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+// import "@openzeppelin/contracts/utils/Pausable.sol";
+// import {Pausable} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+// import "@openzeppelin/contracts/access/Ownable.sol";
+// import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+// import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 //check if its good to implement
-using SafeERC20 for IERC20; //https://docs.openzeppelin.com/contracts/4.x/api/token/erc20#SafeERC20
+//using SafeERC20 for IERC20; //https://docs.openzeppelin.com/contracts/4.x/api/token/erc20#SafeERC20 ///@audit not sure about that
 
 /** @title Simple Staking Protocol
  * @author DappScout
@@ -37,6 +43,8 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     uint256 internal rewardRate;
     
     uint256 internal lastBlockNumber;
+
+
     
 ////////////////////////Mappings/////////////////////////// 
     /** 
@@ -51,6 +59,8 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     */
     mapping(address => uint256) private rewardDebt;
 
+
+    mapping(address => uint256) private rewards;
 /////////////////////////////////////////////////// 
 /////////////////////EVENTS////////////////////////
 /////////////////////////////////////////////////// 
@@ -60,6 +70,7 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     event RewardsClaimed(address indexed user, uint256 reward);
     event Paused();
     event Unpaused();
+    
 /////////////////////////////////////////////////// 
 /////////////////////ERRORS////////////////////////
 ///////////////////////////////////////////////////
@@ -67,12 +78,12 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
 error StakingContract_WrongAmountGiven();
 
 
-
 /////////////////////////////////////////////////////
 /////////////////////CONSTRUCTOR/////////////////////
 /////////////////////////////////////////////////////
 
-constructor(address _initialOwner) {
+constructor(address initialOwner) Ownable(initialOwner){
+
 
 }
 
@@ -131,11 +142,11 @@ receive() external payable{
     */ 
 
     function pause() public onlyOwner whenNotPaused{
-
+        _pause();
     }
 
     function unpause() public onlyOwner whenPaused(){
-
+        _unpause();
     }
 
 
@@ -179,10 +190,9 @@ receive() external payable{
 add staking functions
 add unstaking function
 reward accumulation - function/modifier?
-pausing functionality for emengency - modifier and function for pausing? Some
+pausing functionality for emengency - modifier and function for pausing? 
 
-
-check how to safely do:
+Some check how to safely do:
 state management, 
 reward calculation, 
 access control, 

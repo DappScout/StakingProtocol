@@ -9,7 +9,6 @@ contract DeployTokenERC20 is Script {
     function runTokenERC20(uint256 _initialSupply) external returns (ScoutToken) {
         vm.broadcast();
         ScoutToken scoutToken = new ScoutToken(_initialSupply);
-        vm.broadcast();
         return scoutToken;
     }
 }
@@ -18,7 +17,6 @@ contract DeployStakingContract is Script {
     function runStakingProtocol(address _initialOwner) external returns (StakingContract) {
         vm.broadcast();
         StakingContract stakingContract = new StakingContract(_initialOwner);
-        vm.broadcast();
         return stakingContract;
     }
 }
