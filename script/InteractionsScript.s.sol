@@ -7,10 +7,6 @@ import {console, Test} from "forge-std/Test.sol";
 import {StakingContract} from "../src/StakingContract.sol";
 import {ScoutToken} from "../src/TokenERC20.sol";
 
-contract StakeStakingContract is Script{
-
-function tesat() public {}
-
-
-
+contract StakeStakingContract is Script {
+    function tesat() public {}
 }
