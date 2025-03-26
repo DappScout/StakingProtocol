@@ -27,7 +27,7 @@ contract StakingProtocolTest is Test {
     }
 
     /*///////////////////////////////////////////////////////////////////////////////////
-    /////////////////////////////////Pause test//////////////////////////////////////////
+    /////////////////////////////////Pause tests/////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////*/
 
     function userPause(address user) public {
@@ -42,14 +42,15 @@ contract StakingProtocolTest is Test {
         vm.stopPrank();
     }
 
-    /*
-    Scenario: Owner pauses the contract
-    Given the Staking contract is active
-    When the owner calls "pause()"
-    Then the contract should log a "Paused" event
-    And any subsequent calls to "stake", "unstake", or "claimRewards" should revert with "Contract is paused"
-    */
     function testOwnerPausingTheContract() public {
+//  Scenario: Owner pauses the contract
+//   Given the Staking contract is active
+//   When the owner calls "pause()"
+//   Then the contract should log a "Paused" event
+//   And any subsequent calls to "stake", "unstake", or "claimRewards" should revert with "Contract is paused"
+
+
+
         //setup
         assertEq(stakingContract.paused(), false, "Protocol is paused!");
         vm.recordLogs();
@@ -89,6 +90,12 @@ contract StakingProtocolTest is Test {
     }
 
     function testUserPausingTheContract() public {
+    // Scenario: Owner unpauses the contract
+    //   Given the Staking contract is paused
+    //   When the owner calls "unpause()"
+    //   Then the contract should log an "Unpaused" event
+    //   And normal operations (stake, unstake, claimRewards) should resume successfully
+        
         //setup
         assertEq(stakingContract.paused(), false, "Protocol is paused!");
         vm.recordLogs();
@@ -132,4 +139,23 @@ contract StakingProtocolTest is Test {
     function testClaimRewardsWhilePaused() public {}
 
     function testPauseWhilePaused() public {}
+
+/*///////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////Staking tests///////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////*/
+
+    function testUserStakeTokens() public{
+    // Scenario: User stakes tokens successfully
+    //   Given a deployed Token contract with an initial token balance for user "Alice"
+    //   And a deployed Staking contract with a reward rate of 0.1% per block
+    //   When Alice approves the Staking contract to spend 100 tokens
+    //   And Alice calls "stake(100)" on the Staking contract
+    //   Then the contract should log a "Staked" event with (Alice, 100)
+    //   And Alice's staked balance should be 100 tokens
+    //   And the total staked amount in the contract should increase by 100 tokens
+
+    
+
+        
+    }
 }

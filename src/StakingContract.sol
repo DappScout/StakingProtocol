@@ -16,44 +16,50 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 //check if its good to implement
 //using SafeERC20 for IERC20; //https://docs.openzeppelin.com/contracts/4.x/api/token/erc20#SafeERC20 ///@audit not sure about that
 
-/**
- * @title Simple Staking Protocol
+/** @title Simple Staking Protocol
  * @author DappScout
  * @notice Contract for managing staking logic, rewards management and emergency pausing
  * @dev Contract should be ownable, pausable,
  */
 contract StakingContract is Ownable, Pausable, ReentrancyGuard {
-    ///////////////////////////////////////////////////
-    /////////////////////VARIABLES/////////////////////
-    ///////////////////////////////////////////////////
+
+///////////////////////////////////////////////////  
+/////////////////////VARIABLES/////////////////////
+/////////////////////////////////////////////////// 
+
 
     ///@notice A stake variable to track whole amount staked
 
     IERC20 public immutable i_stakingToken;
 
+
     ///@notice A stake variable to track whole amount staked
 
     uint256 internal totalStakedAmount;
 
+
     ///@notice Parameter that defines a reward rate per second
     uint256 internal rewardRate;
-
+    
     uint256 internal lastBlockNumber;
 
-    ////////////////////////Mappings///////////////////////////
 
+    
+////////////////////////Mappings/////////////////////////// 
+ 
     ///@notice
     mapping(address user => uint256 stakedAmount) private stakes;
-
+    
     mapping(address user => uint256 paidRewards) private paidRewards;
 
-    ///@notice
+    ///@notice 
     mapping(address => uint256) private rewardDebt;
 
+
     mapping(address => uint256) private rewards;
-    ///////////////////////////////////////////////////
-    /////////////////////EVENTS////////////////////////
-    ///////////////////////////////////////////////////
+/////////////////////////////////////////////////// 
+/////////////////////EVENTS////////////////////////
+/////////////////////////////////////////////////// 
 
     event Staked(address indexed user, uint256 amount);
     event Unstaked(address indexed user, uint256 amount);
@@ -61,89 +67,113 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     event Paused();
     event Unpaused();
 
-    ///////////////////////////////////////////////////
-    /////////////////////ERRORS////////////////////////
-    ///////////////////////////////////////////////////
+/////////////////////////////////////////////////// 
+/////////////////////ERRORS////////////////////////
+///////////////////////////////////////////////////
 
     error StakingContract_WrongAmountGiven();
+    error StakingContract_InsufficientBalance();
 
-    /////////////////////////////////////////////////////
-    /////////////////////CONSTRUCTOR/////////////////////
-    /////////////////////////////////////////////////////
 
-    constructor(address initialOwner) Ownable(initialOwner) {}
+/////////////////////////////////////////////////////
+/////////////////////CONSTRUCTOR/////////////////////
+/////////////////////////////////////////////////////
 
-    /*////////////////////////////////////////////////// 
-    /////////////////////MODIFIERS/////////////////////
-    //////////////////////////////////////////////////*/
+    constructor(address initialOwner) Ownable(initialOwner){
+    
+    }
 
-    receive() external payable {}
+/*////////////////////////////////////////////////// 
+/////////////////////MODIFIERS/////////////////////
+//////////////////////////////////////////////////*/ 
 
-    /*///////////////////////////////////////////////////////
+    receive() external payable{
+    }
+
+/*///////////////////////////////////////////////////////
                     MAIN FUNCTIONS
-    ///////////////////////////////////////////////////////*/
-
-    /**
-     * @notice Allows users to stake a specified amount of tokens.
-     *         Staking is allowed only when protocol is not paused by the owner
-     * @dev  Can be done by regular user, but not the owner
-     *
-     */
-    function stake(uint256 _amount) public whenNotPaused nonReentrant {
-        if (_amount < minimalStakeAmount) revert StakingContract_WrongAmountGiven();
-        calculateRewards(msg.sender);
+///////////////////////////////////////////////////////*/
+  
+    /** 
+    * @notice Allows users to stake a specified amount of tokens.
+    *         Staking is allowed only when protocol is not paused by the owner
+    * @dev  Can be done by regular user, but not the owner
+    *       
+    */ 
+    function stake(uint256 _amount) public whenNotPaused nonReentrant{
+        /*minimal amount
+        add amount to user ballance
+        update the token rewards
+        */
+        if(_amount < minimalStakeAmount) revert StakingContract_WrongAmountGiven();
+        if(i_stakingToken.balanceOf(msg.sender) < _amount){revert StakingContract_InsufficientBalance()};
         stakes[msg.sender] = stakes[msg.sender] + _amount;
-
+        
+        
+        calculateRewards(msg.sender);
         emit Staked(msg.sender, _amount);
     }
 
-    /**
-     * @notice Allows users to withdraw a portion of their staked tokens.
-     *         Staking is allowed only when protocol is not paused by the owner
-     */
-    function unstake(uint256 _amount) public whenNotPaused nonReentrant {
-        // if(_amount <= balanceOf[msg.sender]) revert StakingContract_WrongAmountGiven(); // check if balance is greater than unstake amount
+    /** 
+    * @notice Allows users to withdraw a portion of their staked tokens.
+    *         Staking is allowed only when protocol is not paused by the owner
+    */ 
+
+    function unstake(uint256 _amount) public whenNotPaused nonReentrant{
+        // if(_amount <= balanceOf[msg.sender]) revert StakingContract_WrongAmountGiven(); // check if balance is greater than unstake amount 
         // if() revert; //is not zero, or dust amount
+
+
     }
+    
+    
+    
+    
+    /** 
+    * @notice Enables users to claim their accumulated rewards
+    *         Staking is allowed only when protocol is not paused by the owner
+    */ 
 
-    /**
-     * @notice Enables users to claim their accumulated rewards
-     *         Staking is allowed only when protocol is not paused by the owner
-     */
-    function claimRewards() public whenNotPaused nonReentrant {}
+    function claimRewards() public whenNotPaused nonReentrant{}
 
-    /**
-     * @notice Permits the owner to halt and resume staking operations.
-     *         Staking is allowed only when protocol is not paused by the owner
-     */
-    function pause() public onlyOwner whenNotPaused {
+    /** 
+    * @notice Permits the owner to halt and resume staking operations.
+    *         Staking is allowed only when protocol is not paused by the owner
+    */ 
+
+    function pause() public onlyOwner whenNotPaused{
         _pause();
     }
 
-    function unpause() public onlyOwner whenPaused {
+    function unpause() public onlyOwner whenPaused(){
         _unpause();
     }
+
 
     /* Concept:
     - should this be executed at the begining of every transaction?
     - This
     */
     function calculateRewards(address _user) private {
-        uint256 rewardPerToken = (rewardRate / totalStakedAmount) * (block.number - lastBlockNumber);
 
-        rewards[_user] = stakes[_user] * (rewardPerToken * paidRewards[_user]);
-        ///@notice update already paid token rewards to user
-        paidRewards[_user] = rewardPerToken;
+    uint256 rewardPerToken = (rewardRate / totalStakedAmount) * (block.number - lastBlockNumber);
 
-        ///@notice update last block number
-        lastBlockNumber = block.number;
+    rewards[_user] = stakes[_user] * (rewardPerToken * paidRewards[_user]); 
+    ///@notice update already paid token rewards to user
+    paidRewards[_user] = rewardPerToken;
+    
+    ///@notice update last block number
+    lastBlockNumber = block.number;
 
-        ///Something is fucked here
+///Something is fucked here
     }
 
-    //////////////////////////////////////////////////////////
-    /////////////////////GETTER FUNCTIONS/////////////////////
-    //////////////////////////////////////////////////////////
+
+
+
+//////////////////////////////////////////////////////////
+/////////////////////GETTER FUNCTIONS/////////////////////
+//////////////////////////////////////////////////////////
     function getStakedBalance(address _staker) public view returns (uint256) {
         return stakes[_staker];
     }
@@ -152,6 +182,8 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
         return rewardDebt[_staker];
     }
 }
+
+
 
 /*
 add staking functions
