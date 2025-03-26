@@ -55,27 +55,82 @@ contract StakingProtocolTest is Test{
     function testOwnerPausingTheContract() public{
 
         assertEq(stakingContract.paused(), false, "Protocol is paused!");
-        
+        vm.recordLogs();
         //act
 
         userPause(owner);
 
         //check
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        assertEq(entries.length, 1, "One log was expected!");
+        bytes32 expectedEvent = keccak256("Paused(address)");
+        assertEq(entries[0].topics[0], expectedEvent, "Paused event was not emmited!");
+
         assertEq(stakingContract.paused(), true, "Protocol isnt paused!");
     }
 
     function testOwnerUnpausingTheContract() public{
 
+        vm.recordLogs();
         assertEq(stakingContract.paused(), false, "Protocol is paused!");
         userPause(owner);
         assertEq(stakingContract.paused(), true, "Protocol isnt paused!");
-        
+       
+
+
         //act
 
         userUnpause(owner);
 
         //check
+
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        assertEq(entries.length, 2, "Two logs were expected!");
+        bytes32 expectedEvent1 = keccak256("Paused(address)");
+        bytes32 expectedEvent2 = keccak256("Unpaused(address)");
+        assertEq(entries[0].topics[0], expectedEvent1, "Paused event was not emmited!");
+        assertEq(entries[1].topics[0], expectedEvent2, "Paused event was not emmited!");
         assertEq(stakingContract.paused(), false, "Protocol is paused!");
     }
 
+
+    function testUserPausingTheContract() public{
+
+        assertEq(stakingContract.paused(), false, "Protocol is paused!");
+        vm.recordLogs();
+
+
+        //act
+        vm.expectRevert();
+        userPause(userOne);
+
+        //check
+        assertEq(stakingContract.paused(), false, "Protocol is paused!");
+    }
+
+    function testUserUnpausingTheContract() public{
+
+        vm.recordLogs();
+        assertEq(stakingContract.paused(), false, "Protocol is paused!");
+        userPause(owner);
+        assertEq(stakingContract.paused(), true, "Protocol isnt paused!");
+        
+
+
+        //act
+        vm.expectRevert();
+        userUnpause(userOne);
+
+        //check
+        assertEq(stakingContract.paused(), true, "Protocol is unpaused!");
+    }
+
+    //When paused, functions like stake, unstake, and claimRewards should revert.
+    //Only privileged functions (such as unpause) should operate while the contract is paused.
+
+    function testStakeWhilePaused() public{}
+
+    function testUnstakeWhilePaused() public{}
+
+    function testclaimRewardsPaused() public{}
 }
