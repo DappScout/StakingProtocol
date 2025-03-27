@@ -13,8 +13,8 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 // import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 // import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-//check if its good to implement
-//using SafeERC20 for IERC20; //https://docs.openzeppelin.com/contracts/4.x/api/token/erc20#SafeERC20 ///@audit not sure about that
+
+using SafeERC20 for IERC20; //https://docs.openzeppelin.com/contracts/4.x/api/token/erc20#SafeERC20 ///@audit not sure about that
 
 /** @title Simple Staking Protocol
  * @author DappScout
@@ -79,16 +79,16 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
 /////////////////////CONSTRUCTOR/////////////////////
 /////////////////////////////////////////////////////
 
-    constructor(address initialOwner) Ownable(initialOwner){
-    
+    constructor(address initialOwner, address _stakingTokenAddress) Ownable(initialOwner){
+        
+        i_stakingToken = IERC20(_stakingTokenAddress);
     }
 
 /*////////////////////////////////////////////////// 
 /////////////////////MODIFIERS/////////////////////
 //////////////////////////////////////////////////*/ 
 
-    receive() external payable{
-    }
+
 
 /*///////////////////////////////////////////////////////
                     MAIN FUNCTIONS
@@ -105,12 +105,20 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
         add amount to user ballance
         update the token rewards
         */
-        if(_amount < minimalStakeAmount) revert StakingContract_WrongAmountGiven();
-        if(i_stakingToken.balanceOf(msg.sender) < _amount){revert StakingContract_InsufficientBalance()};
+        if(_amount == 0) revert StakingContract_WrongAmountGiven();
+        //check if some dust amounts can disturb the protocol
+        // if(_amount < minimalStakeAmount) revert StakingContract_WrongAmountGiven();
+        if(i_stakingToken.balanceOf(msg.sender) < _amount) revert StakingContract_InsufficientBalance();
+        
+        //i_stakingToken.allowance(msg.sender, address(this), _);
+        
+        i_stakingToken.transferFrom(msg.sender ,address(this), _amount);
+
         stakes[msg.sender] = stakes[msg.sender] + _amount;
         
+        //That function is under construction
+        //calculateRewards(msg.sender);
         
-        calculateRewards(msg.sender);
         emit Staked(msg.sender, _amount);
     }
 
@@ -122,8 +130,9 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     function unstake(uint256 _amount) public whenNotPaused nonReentrant{
         // if(_amount <= balanceOf[msg.sender]) revert StakingContract_WrongAmountGiven(); // check if balance is greater than unstake amount 
         // if() revert; //is not zero, or dust amount
-
-
+        i_stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
+        stakes[msg.sender] = stakes[msg.sender] - _amount;
+        emit Unstaked(msg.sender, _amount); 
     }
     
     
