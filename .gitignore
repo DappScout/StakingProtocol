@@ -14,4 +14,5 @@ docs/
 .env
 
 .vscode/
-
+.windsurfrules
+Docs.md
