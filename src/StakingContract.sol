@@ -7,15 +7,6 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-// import "@openzeppelin/contracts/utils/Pausable.sol";
-// import {Pausable} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-// import "@openzeppelin/contracts/access/Ownable.sol";
-// import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-// import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
-
-using SafeERC20 for IERC20; //https://docs.openzeppelin.com/contracts/4.x/api/token/erc20#SafeERC20 ///@audit not sure about that
-
 /** @title Simple Staking Protocol
  * @author DappScout
  * @notice Contract for managing staking logic, rewards management and emergency pausing
@@ -23,43 +14,40 @@ using SafeERC20 for IERC20; //https://docs.openzeppelin.com/contracts/4.x/api/to
  */
 contract StakingContract is Ownable, Pausable, ReentrancyGuard {
 
-///////////////////////////////////////////////////  
-/////////////////////VARIABLES/////////////////////
-/////////////////////////////////////////////////// 
+using SafeERC20 for IERC20;
 
+/*//////////////////////////////////////////////////////
+                    VARIABLES
+//////////////////////////////////////////////////////*/
 
-    ///@notice A stake variable to track whole amount staked
-
+    ///@notice The token that users can stake in this contract
     IERC20 public immutable i_stakingToken;
 
-
     ///@notice A stake variable to track whole amount staked
-
     uint256 internal totalStakedAmount;
-
 
     ///@notice Parameter that defines a reward rate per second
     uint256 internal rewardRate;
     
     uint256 internal lastBlockNumber;
 
+/*//////////////////////////////////////////////////////
+                    MAPPINGS
+//////////////////////////////////////////////////////*/
 
-    
-////////////////////////Mappings/////////////////////////// 
- 
     ///@notice
-    mapping(address user => uint256 stakedAmount) private stakes;
+    mapping(address => uint256) private stakes;
     
-    mapping(address user => uint256 paidRewards) private paidRewards;
+    mapping(address => uint256) private paidRewards;
 
     ///@notice 
     mapping(address => uint256) private rewardDebt;
 
-
     mapping(address => uint256) private rewards;
-/////////////////////////////////////////////////// 
-/////////////////////EVENTS////////////////////////
-/////////////////////////////////////////////////// 
+
+/*//////////////////////////////////////////////////////
+                    EVENTS
+//////////////////////////////////////////////////////*/
 
     event Staked(address indexed user, uint256 amount);
     event Unstaked(address indexed user, uint256 amount);
@@ -67,32 +55,29 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     event Paused();
     event Unpaused();
 
-/////////////////////////////////////////////////// 
-/////////////////////ERRORS////////////////////////
-///////////////////////////////////////////////////
+/*//////////////////////////////////////////////////////
+                    ERRORS
+//////////////////////////////////////////////////////*/
 
     error StakingContract_WrongAmountGiven();
     error StakingContract_InsufficientBalance();
 
-
-/////////////////////////////////////////////////////
-/////////////////////CONSTRUCTOR/////////////////////
-/////////////////////////////////////////////////////
+/*//////////////////////////////////////////////////////
+                    CONSTRUCTOR
+//////////////////////////////////////////////////////*/
 
     constructor(address initialOwner, address _stakingTokenAddress) Ownable(initialOwner){
         
         i_stakingToken = IERC20(_stakingTokenAddress);
     }
 
-/*////////////////////////////////////////////////// 
-/////////////////////MODIFIERS/////////////////////
-//////////////////////////////////////////////////*/ 
+/*//////////////////////////////////////////////////////
+                    MODIFIERS
+//////////////////////////////////////////////////////*/
 
-
-
-/*///////////////////////////////////////////////////////
+/*//////////////////////////////////////////////////////
                     MAIN FUNCTIONS
-///////////////////////////////////////////////////////*/
+//////////////////////////////////////////////////////*/
   
     /** 
     * @notice Allows users to stake a specified amount of tokens.
@@ -109,8 +94,6 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
         //check if some dust amounts can disturb the protocol
         // if(_amount < minimalStakeAmount) revert StakingContract_WrongAmountGiven();
         if(i_stakingToken.balanceOf(msg.sender) < _amount) revert StakingContract_InsufficientBalance();
-        
-        //i_stakingToken.allowance(msg.sender, address(this), _);
         
         i_stakingToken.transferFrom(msg.sender ,address(this), _amount);
 
@@ -130,7 +113,7 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     function unstake(uint256 _amount) public whenNotPaused nonReentrant{
         // if(_amount <= balanceOf[msg.sender]) revert StakingContract_WrongAmountGiven(); // check if balance is greater than unstake amount 
         // if() revert; //is not zero, or dust amount
-        i_stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
+        i_stakingToken.safeTransfer(msg.sender, _amount);
         stakes[msg.sender] = stakes[msg.sender] - _amount;
         emit Unstaked(msg.sender, _amount); 
     }
@@ -160,10 +143,9 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
 
 
     /* Concept:
-    - should this be executed at the begining of every transaction?
-    - This
+    - should this be executed at the end of every transaction?
     */
-    function calculateRewards(address _user) private {
+    function calculateRewards(address _user) internal{
 
     uint256 rewardPerToken = (rewardRate / totalStakedAmount) * (block.number - lastBlockNumber);
 
@@ -174,15 +156,16 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     ///@notice update last block number
     lastBlockNumber = block.number;
 
-///Something is fucked here
+///Unde construction - Something is not working here - Check
     }
 
 
 
 
-//////////////////////////////////////////////////////////
-/////////////////////GETTER FUNCTIONS/////////////////////
-//////////////////////////////////////////////////////////
+/*//////////////////////////////////////////////////////
+                    GETTER FUNCTIONS
+//////////////////////////////////////////////////////*/
+
     function getStakedBalance(address _staker) public view returns (uint256) {
         return stakes[_staker];
     }
@@ -191,23 +174,3 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
         return rewardDebt[_staker];
     }
 }
-
-
-
-/*
-add staking functions
-add unstaking function
-reward accumulation - function/modifier?
-pausing functionality for emengency - modifier and function for pausing? 
-
-Some check how to safely do:
-state management, 
-reward calculation, 
-access control, 
-pausing mechanisms
-secure token transfers
-
-Additional features:
-Dynamic Reward Rate: Allow the owner to adjust the reward rate
-Early Unstake Penalty: Implement a penalty for unstaking before a specified lock-up period.
-*/
