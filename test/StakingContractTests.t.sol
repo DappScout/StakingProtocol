@@ -9,8 +9,6 @@ import {DeployStakingContract} from "../script/DeployProtocol.s.sol";
 import {DeployTokenERC20} from "../script/DeployProtocol.s.sol";
 
 contract StakingProtocolTest is Test {
-    
-    
     StakingContract stakingContract;
     ScoutToken tokenContract;
 
@@ -21,10 +19,10 @@ contract StakingProtocolTest is Test {
     address public userFour;
 
     uint256 public constant DEFAULT_TOKEN_SUPPLY = 10000;
+    uint256 public constant DEFAULT_STAKE_AMOUNT = 0;
 
     ///@dev values is updated contractBalance()
     uint256 public contractBalance;
-
 
     function setUp() public {
         owner = msg.sender;
@@ -33,36 +31,32 @@ contract StakingProtocolTest is Test {
         userThree = makeAddr("userthree");
         userFour = makeAddr("userfour");
 
-        deployContracts(DEFAULT_TOKEN_SUPPLY);
+        deployContracts(DEFAULT_TOKEN_SUPPLY, DEFAULT_STAKE_AMOUNT);
     }
 
     /*///////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////Helper functions/////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////*/
 
-    function deployContracts(uint256 _initialSupply) public{
+    function deployContracts(uint256 _initialSupply, uint256 _minimalStakeAmount) public {
         DeployTokenERC20 deployTokenERC20 = new DeployTokenERC20();
         tokenContract = deployTokenERC20.runTokenERC20(_initialSupply);
 
         DeployStakingContract deployStakingContract = new DeployStakingContract();
-        stakingContract = deployStakingContract.runStakingProtocol(owner, address(tokenContract));
+        stakingContract = deployStakingContract.runStakingProtocol(owner, address(tokenContract), _minimalStakeAmount);
     }
 
-
-    function getContractBalance() public returns(uint256 _contractBalance){
-
+    function getContractBalance() public returns (uint256 _contractBalance) {
         contractBalance = stakingContract.i_stakingToken().balanceOf(address(stakingContract));
 
         return contractBalance;
     }
-
 
     function userPause(address user) public {
         vm.startPrank(user);
         stakingContract.pause();
         vm.stopPrank();
     }
-
 
     function userUnpause(address _user) public {
         vm.startPrank(_user);
@@ -75,21 +69,21 @@ contract StakingProtocolTest is Test {
         tokenContract.mint(_user, _value);
     }
 
+    function approveUser(address _user, address _spender, uint256 _amount) public {
+        vm.prank(_user);
+        tokenContract.approve(_spender, _amount);
+    }
 
     /*///////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////Pause tests/////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////*/
 
-
-
     function testOwnerPausingTheContract() public {
-//  Scenario: Owner pauses the contract
-//   Given the Staking contract is active
-//   When the owner calls "pause()"
-//   Then the contract should log a "Paused" event
-//   And any subsequent calls to "stake", "unstake", or "claimRewards" should revert with "Contract is paused"
-
-
+        //  Scenario: Owner pauses the contract
+        //   Given the Staking contract is active
+        //   When the owner calls "pause()"
+        //   Then the contract should log a "Paused" event
+        //   And any subsequent calls to "stake", "unstake", or "claimRewards" should revert with "Contract is paused"
 
         //setup
         assertEq(stakingContract.paused(), false, "Protocol is paused!");
@@ -106,7 +100,6 @@ contract StakingProtocolTest is Test {
 
         assertEq(stakingContract.paused(), true, "Protocol isnt paused!");
     }
-
 
     function testOwnerUnpausingTheContract() public {
         //setup
@@ -130,14 +123,13 @@ contract StakingProtocolTest is Test {
         assertEq(stakingContract.paused(), false, "Protocol is paused!");
     }
 
-
     function testUserPausingTheContract() public {
-    // Scenario: Owner unpauses the contract
-    //   Given the Staking contract is paused
-    //   When the owner calls "unpause()"
-    //   Then the contract should log an "Unpaused" event
-    //   And normal operations (stake, unstake, claimRewards) should resume successfully
-        
+        // Scenario: Owner unpauses the contract
+        //   Given the Staking contract is paused
+        //   When the owner calls "unpause()"
+        //   Then the contract should log an "Unpaused" event
+        //   And normal operations (stake, unstake, claimRewards) should resume successfully
+
         //setup
         assertEq(stakingContract.paused(), false, "Protocol is paused!");
         vm.recordLogs();
@@ -150,7 +142,6 @@ contract StakingProtocolTest is Test {
         Vm.Log[] memory entries = vm.getRecordedLogs();
         assertEq(stakingContract.paused(), false, "Protocol is paused!");
     }
-
 
     function testUserUnpausingTheContract() public {
         //setup
@@ -175,64 +166,66 @@ contract StakingProtocolTest is Test {
     //When paused, functions like stake, unstake, and claimRewards should revert.
     //Only privileged functions (such as unpause) should operate while the contract is paused.
 
-
     function testStakeWhilePaused() public {}
-
 
     function testUnstakeWhilePaused() public {}
 
-
     function testClaimRewardsWhilePaused() public {}
-
 
     function testPauseWhilePaused() public {}
 
-/*///////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////Staking tests///////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////*/
+    /*///////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////Staking tests///////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////*/
 
-    function testUserStakeTokens() public{
-    // Scenario: User stakes tokens successfully
-    //   Given a deployed Token contract with an initial token balance for user "Alice"
-    //   And a deployed Staking contract with a reward rate of 0.1% per block
-    //   When Alice approves the Staking contract to spend 100 tokens
-    //   And Alice calls "stake(100)" on the Staking contract
-    //   Then the contract should log a "Staked" event with (Alice, 100)
-    //   And Alice's staked balance should be 100 tokens
-    //   And the total staked amount in the contract should increase by 100 tokens
+    function testUserStakeTokens() public {
+        // Scenario: User stakes tokens successfully
+        //   Given a deployed Token contract with an initial token balance for user "Alice"
+        //   And a deployed Staking contract with a reward rate of 0.1% per block
+        //   When Alice approves the Staking contract to spend 100 tokens
+        //   And Alice calls "stake(100)" on the Staking contract
+        //   Then the contract should log a "Staked" event with (Alice, 100)
+        //   And Alice's staked balance should be 100 tokens
+        //   And the total staked amount in the contract should increase by 100 tokens
 
-    //setup
+        //setup
 
-    vm.recordLogs();
-    
-    console.log(getContractBalance());
-    assertEq(getContractBalance(), 0 , "Balance is not zero!");
-    
-    mintToken(userOne, 10);
-    assertEq(tokenContract.balanceOf(userOne), 10, "User's balance is not 10!");
-    
+        console.log(getContractBalance());
+        assertEq(getContractBalance(), 0, "Balance is not zero!");
 
-    //act
+        mintToken(userOne, 100);
+        assertEq(tokenContract.balanceOf(userOne), 100, "User's balance is not 100!");
 
-    vm.prank(userOne);
-    stakingContract.stake(10);
+        //act
 
-    //check
+        approveUser(userOne, address(stakingContract), 100);
 
-    assertEq(tokenContract.balanceOf(userOne),  0, "User's balance is not zero!");
+        vm.recordLogs();
+
+        vm.prank(userOne);
+        stakingContract.stake(100);
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        //check
+
+        assertEq(tokenContract.balanceOf(userOne), 0, "User's balance is not zero!");
+
+        assertEq(entries.length, 2, "Emission of one event was expected!");
+        bytes32 expectedEvent1 = keccak256("Staked(address,uint256)");
+        assertEq(entries[1].topics[0], expectedEvent1, "Staked event was not emitted!");
+
+        address stakerAddress = address(uint160(uint256(entries[1].topics[1])));
+        assertEq(stakerAddress, userOne, "Wrong staker address in event!");
+
+        uint256 stakedAmount = abi.decode(entries[1].data, (uint256));
+        assertEq(stakedAmount, 100, "Wrong amount in event!");
     }
 
-
-    function testUserStakeWithZeroAmount() public{
-    // Scenario: User stakes 0 tokens
-    //   Given a deployed Token contract with an initial token balance for user "Alice"
-    //   When Alice calls "stake(0)" on the Staking contract
-    //   Then the contract should revert with "StakingContract_WrongAmountGiven()"
-    //   And Alice's staked balance should be 0 tokens
-    //   And the total staked amount in the contract should not change
-        
-    
-
-        
+    function testUserStakeWithZeroAmount() public {
+        // Scenario: User stakes 0 tokens
+        //   Given a deployed Token contract with an initial token balance for user "Alice"
+        //   When Alice calls "stake(0)" on the Staking contract
+        //   Then the contract should revert with "StakingContract_WrongAmountGiven()"
+        //   And Alice's staked balance should be 0 tokens
+        //   And the total staked amount in the contract should not change
     }
 }

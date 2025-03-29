@@ -6,7 +6,6 @@ import {StakingContract} from "../src/StakingContract.sol";
 import {ScoutToken} from "../src/TokenERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-
 contract DeployTokenERC20 is Script {
     function runTokenERC20(uint256 _initialSupply) external returns (ScoutToken) {
         vm.broadcast();
@@ -16,9 +15,12 @@ contract DeployTokenERC20 is Script {
 }
 
 contract DeployStakingContract is Script {
-    function runStakingProtocol(address _initialOwner, address _initialSupply) external returns (StakingContract) {
+    function runStakingProtocol(address _initialOwner, address _initialSupply, uint256 i_minimalStakeAmount)
+        external
+        returns (StakingContract)
+    {
         vm.broadcast();
-        StakingContract stakingContract = new StakingContract(_initialOwner, _initialSupply);
+        StakingContract stakingContract = new StakingContract(_initialOwner, _initialSupply, i_minimalStakeAmount);
         return stakingContract;
     }
 }
