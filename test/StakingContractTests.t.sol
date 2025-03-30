@@ -52,10 +52,12 @@ contract StakingProtocolTest is Test {
         return contractBalance;
     }
 
-    function getContractBalanceOf(address user) public returns (uint256 _Balance) {
-        uint256 _balance = stakingContract.i_stakingToken().balanceOf(user);
+    function getContractBalanceOf() public view returns (uint256) {
+        return stakingContract.i_stakingToken().balanceOf(address(stakingContract));
+    }
 
-        return _balance;
+    function getStakerBalance(address user) public view returns (uint256) {
+        return stakingContract.i_stakingToken().balanceOf(user);
     }
 
     function userPause(address user) public {
