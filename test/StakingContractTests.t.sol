@@ -52,6 +52,12 @@ contract StakingProtocolTest is Test {
         return contractBalance;
     }
 
+    function getContractBalanceOf(address user) public returns (uint256 _Balance) {
+        uint256 _balance = stakingContract.i_stakingToken().balanceOf(user);
+
+        return _balance;
+    }
+
     function userPause(address user) public {
         vm.startPrank(user);
         stakingContract.pause();
@@ -190,8 +196,8 @@ contract StakingProtocolTest is Test {
 
         //setup
 
-        console.log(getContractBalance());
-        assertEq(getContractBalance(), 0, "Balance is not zero!");
+        console.log(getContractBalanceOf());
+        assertEq(getContractBalanceOf(), 0, "Balance is not zero!");
 
         mintToken(userOne, 100);
         assertEq(tokenContract.balanceOf(userOne), 100, "User's balance is not 100!");
@@ -209,6 +215,7 @@ contract StakingProtocolTest is Test {
 
         assertEq(tokenContract.balanceOf(userOne), 0, "User's balance is not zero!");
 
+        // check - events
         assertEq(entries.length, 2, "Emission of one event was expected!");
         bytes32 expectedEvent1 = keccak256("Staked(address,uint256)");
         assertEq(entries[1].topics[0], expectedEvent1, "Staked event was not emitted!");
@@ -218,6 +225,8 @@ contract StakingProtocolTest is Test {
 
         uint256 stakedAmount = abi.decode(entries[1].data, (uint256));
         assertEq(stakedAmount, 100, "Wrong amount in event!");
+
+        // check - accounting
     }
 
     function testUserStakeWithZeroAmount() public {

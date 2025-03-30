@@ -26,12 +26,12 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     uint256 public immutable i_minimalStakeAmount;
 
     ///@notice A stake variable to track whole amount staked
-    uint256 internal totalStakedAmount;
+    uint256 internal s_totalStakedAmount;
 
     ///@notice Parameter that defines a reward rate per second
-    uint256 internal rewardRate;
+    uint256 internal s_rewardRate;
 
-    uint256 internal lastBlockNumber;
+    uint256 internal s_lastBlockNumber;
 
     /*//////////////////////////////////////////////////////
                     MAPPINGS
@@ -96,8 +96,9 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
             not zero
             rate limit(slash loans)
             
-        add amount to user ballance
+        add amount to user ballance - done
         update the token rewards
+        early unstake penalty mechanism
     */
 
     function stake(uint256 _amount) public whenNotPaused nonReentrant {
@@ -112,7 +113,7 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
         stakes[msg.sender] = stakes[msg.sender] + _amount;
 
         //temporary added here
-        totalStakedAmount = totalStakedAmount + _amount;
+        s_totalStakedAmount = s_totalStakedAmount + _amount;
         //That function is under construction
         //calculateRewards(msg.sender);
 
@@ -153,14 +154,14 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     - should this be executed at the end of every transaction?
     */
     function calculateRewards(address _user) internal {
-        uint256 rewardPerToken = (rewardRate / totalStakedAmount) * (block.number - lastBlockNumber);
+        uint256 rewardPerToken = (s_rewardRate / s_totalStakedAmount) * (block.number - s_lastBlockNumber);
 
         rewards[_user] = stakes[_user] * (rewardPerToken * paidRewards[_user]);
         ///@notice update already paid token rewards to user
         paidRewards[_user] = rewardPerToken;
 
         ///@notice update last block number
-        lastBlockNumber = block.number;
+        s_lastBlockNumber = block.number;
 
         ///Unde construction - Something is not working here - Check
     }
