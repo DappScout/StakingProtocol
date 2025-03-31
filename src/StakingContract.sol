@@ -26,7 +26,7 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     uint256 public immutable i_minimalStakeAmount;
 
     ///@notice A stake variable to track whole amount staked
-    uint256 internal s_totalStakedAmount;
+    uint256 public s_totalStakedAmount;
 
     ///@notice Parameter that defines a reward rate per second
     uint256 internal s_rewardRate;
@@ -79,6 +79,10 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
                     MODIFIERS
     //////////////////////////////////////////////////////*/
 
+    modifier updateReward(address _user) {
+        
+    
+
     /*//////////////////////////////////////////////////////
                     MAIN FUNCTIONS
     //////////////////////////////////////////////////////*/
@@ -125,10 +129,13 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
      *         Staking is allowed only when protocol is not paused by the owner
      */
     function unstake(uint256 _amount) public whenNotPaused nonReentrant {
-        // if(_amount <= balanceOf[msg.sender]) revert StakingContract_WrongAmountGiven(); // check if balance is greater than unstake amount
-        // if() revert; //is not zero, or dust amount
-        i_stakingToken.safeTransfer(msg.sender, _amount);
+        if(_amount > i_stakingToken.balanceOf(msg.sender)) revert StakingContract_WrongAmountGiven(); // check if balance is greater than unstake amount
+        if(_amount == 0) revert StakingContract_WrongAmountGiven(); //is not zero
+        
         stakes[msg.sender] = stakes[msg.sender] - _amount;
+        i_stakingToken.safeTransfer(msg.sender, _amount);
+
+        calculateRewards(msg.sender);
         emit Unstaked(msg.sender, _amount);
     }
 
@@ -136,7 +143,12 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
      * @notice Enables users to claim their accumulated rewards
      *         Staking is allowed only when protocol is not paused by the owner
      */
-    function claimRewards() public whenNotPaused nonReentrant {}
+    function claimRewards() public whenNotPaused nonReentrant {
+
+
+    }
+
+
 
     /**
      * @notice Permits the owner to halt and resume staking operations.
@@ -163,7 +175,15 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
         ///@notice update last block number
         s_lastBlockNumber = block.number;
 
+        ///@notice update total staked amount
+        s_totalStakedAmount = s_totalStakedAmount - stakes[_user];
+
         ///Unde construction - Something is not working here - Check
+    }
+
+    ///@notice Function for admin to change reward rate
+    function setRewardRate(uint256 _s_rewardRate) external onlyOwner{
+        s_rewardRate = _s_rewardRate;
     }
 
     /*//////////////////////////////////////////////////////
@@ -173,6 +193,8 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     function getStakedBalance(address _staker) public view returns (uint256) {
         return stakes[_staker];
     }
+
+
 
     function getRewardDebt(address _staker) public view returns (uint256) {
         return rewardDebt[_staker];

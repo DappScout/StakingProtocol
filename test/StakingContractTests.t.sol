@@ -15,6 +15,7 @@ contract StakingProtocolTest is Test {
     address public owner;
     address public userOne;
     address public userTwo;
+
     address public userThree;
     address public userFour;
 
@@ -239,4 +240,47 @@ contract StakingProtocolTest is Test {
         //   And Alice's staked balance should be 0 tokens
         //   And the total staked amount in the contract should not change
     }
+
+    /*///////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////Unstaking tests///////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////*/
+
+    function testUserUnstakeTokens() public {
+        // Scenario: User unstakes tokens successfully
+        //   Given Alice has previously staked 100 tokens
+        //   When Alice calls "unstake(50)" on the Staking contract
+        //   Then the contract should log an "Unstaked" event with (Alice, 50)
+        //   And Alice's staked balance should decrease to 50 tokens
+        //   And the total staked amount should decrease by 50 tokens
+    
+        //setup
+        mintToken(userOne, 100);
+        assertEq(tokenContract.balanceOf(userOne), 100, "User's balance is not 100!");
+        approveUser(userOne, address(stakingContract), 100);
+        vm.prank(userOne);
+        stakingContract.stake(100);
+        vm.recordLogs();
+
+        //act
+        vm.prank(userOne);
+        stakingContract.unstake(50);
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        //check
+
+        assertEq(tokenContract.balanceOf(userOne), 50, "User's balance is not 50!");
+        assertEq(stakingContract.getStakedBalance(userOne), 50, "User's stake is not 50!");
+        //assertEq(stakingContract.s_totalStakedAmount(), 50, "Total staked amount is not 50!");
+
+        // check - events
+        assertEq(entries.length, 2, "Emission of one event was expected!");
+        bytes32 expectedEvent1 = keccak256("Unstaked(address,uint256)");
+        assertEq(entries[1].topics[0], expectedEvent1, "Unstaked event was not emitted!");
+
+        address stakerAddress = address(uint160(uint256(entries[1].topics[1])));
+        assertEq(stakerAddress, userOne, "Wrong staker address in event!");
+
+        uint256 unstakedAmount = abi.decode(entries[1].data, (uint256));
+        assertEq(unstakedAmount, 50, "Wrong amount in event!");
+    }
+
 }
