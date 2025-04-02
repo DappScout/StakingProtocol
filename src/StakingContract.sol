@@ -87,24 +87,6 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
                     MODIFIERS
     //////////////////////////////////////////////////////*/
 
-    modifier updateReward(address _user) {
-
-        if(_user == address(0)){revert StakingContract_SomethingWentWrong();}
-
-        UserData storage userTime = userData[_user].lastTimeStamp;
-        
-        ///@notice Check if rewards calculations are needed
-        if(userTime != 0){
-
-        ///@notice Check that reverts a call to prevent too frequent calls.
-        if(block.timestamp < userData[_user].lastTimeStamp + MINIMAL_TIME_BETWEEN) {
-            revert StakingContract_ToEarly();
-            }
-            
-            calculateRewards(_user);
-        }
-        _;
-    }
         
     
 
@@ -130,32 +112,50 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
         early unstake penalty mechanism
     */
 
-    function stake(uint256 _amount) public whenNotPaused nonReentrant updateReward(msg.sender){
+    function stake(uint256 _amount) public whenNotPaused nonReentrant {
         //check if some dust amounts can disturb the protocol
         if (_amount < i_minimalStakeAmount) revert StakingContract_WrongAmountGiven();
 
-        if (i_stakingToken.balanceOf(msg.sender) < _amount) revert StakingContract_InsufficientBalance();
+        address staker = msg.sender;
 
-        userData[msg.sender].stakedAmount = userData[msg.sender].stakedAmount + _amount;
+        if(staker == address(0)) revert StakingContract_SomethingWentWrong();
+
+        if (i_stakingToken.balanceOf(staker) < _amount) revert StakingContract_InsufficientBalance();
+
+        UserData storage user = userData[staker];
+
+        ///@notice Check if rewards calculations are needed
+        if(user.lastTimeStamp != 0){
+        ///@notice Check that reverts a call to prevent too frequent calls.
+        if(block.timestamp < user.lastTimeStamp + MINIMAL_TIME_BETWEEN) {
+            revert StakingContract_ToEarly();
+            }
+            
+            calculateRewards(staker);
+        }
+        
+        else {
+            user.lastTimeStamp = block.timestamp;
+            }
+
+        
+        userData.stakedAmount = userData.stakedAmount + _amount;
 
         s_totalStakedAmount = s_totalStakedAmount + _amount;
 
         i_stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
 
-
-        if(user.lastTimeStamp == 0){
-            user.lastTimeStamp = block.timestamp;
-            return;
-        }
-
         emit Staked(msg.sender, _amount);
     }
+
+
+
 
     /**
      * @notice Allows users to withdraw a portion of their staked tokens.
      *         Staking is allowed only when protocol is not paused by the owner
      */
-    function unstake(uint256 _amount) public whenNotPaused nonReentrant updateReward(msg.sender){
+    function unstake(uint256 _amount) public whenNotPaused nonReentrant {
         
         if(_amount > userData[msg.sender].stakedAmount) revert StakingContract_WrongAmountGiven(); // check if staked amount is greater than unstake amount
         
