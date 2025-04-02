@@ -14,8 +14,7 @@ contract ScoutToken is ERC20, Ownable(msg.sender) {
         _mint(msg.sender, _initialSupply * (10 ** decimals()));
     }
 
-    function mint(address _user, uint256 _amount) public onlyOwner{
+    function mint(address _user, uint256 _amount) public onlyOwner {
         _mint(_user, _amount);
     }
-
 }

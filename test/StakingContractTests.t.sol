@@ -241,7 +241,7 @@ contract StakingProtocolTest is Test {
         //   And the total staked amount in the contract should not change
     }
 
-    function testUserStakeAfterUnstake() public{
+    function testUserStakeAfterUnstake() public {
         // Scenario: User stakes tokens after unstaking
         //   Given Alice has previously staked 100 tokens
         //   And Alice has unstaked 50 tokens
@@ -262,7 +262,7 @@ contract StakingProtocolTest is Test {
         //   Then the contract should log an "Unstaked" event with (Alice, 50)
         //   And Alice's staked balance should decrease to 50 tokens
         //   And the total staked amount should decrease by 50 tokens
-    
+
         //setup
         mintToken(userOne, 100);
         assertEq(tokenContract.balanceOf(userOne), 100, "User's balance is not 100!");
@@ -292,5 +292,4 @@ contract StakingProtocolTest is Test {
         uint256 unstakedAmount = abi.decode(entries[1].data, (uint256));
         assertEq(unstakedAmount, 50, "Wrong amount in event!");
     }
-
 }
