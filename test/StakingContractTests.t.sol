@@ -241,6 +241,16 @@ contract StakingProtocolTest is Test {
         //   And the total staked amount in the contract should not change
     }
 
+    function testUserStakeAfterUnstake() public{
+        // Scenario: User stakes tokens after unstaking
+        //   Given Alice has previously staked 100 tokens
+        //   And Alice has unstaked 50 tokens
+        //   When Alice calls "stake(50)" on the Staking contract
+        //   Then the contract should log a "Staked" event with (Alice, 50)
+        //   And Alice's staked balance should be 50 tokens
+        //   And the total staked amount in the contract should increase by 50 tokens
+    }
+
     /*///////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////Unstaking tests///////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////*/

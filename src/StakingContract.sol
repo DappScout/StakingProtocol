@@ -88,10 +88,17 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
 
     modifier updateReward(address _user) {
 
+        UserData storage userTime = userData[_user].lastTimeStamp;
+        
+        ///@notice Check if rewards calculations are needed
+        if(userTime != 0){
+
+        ///@notice Check that reverts a call to prevent too frequent calls.
         if(block.timestamp < userData[_user].lastTimeStamp + MINIMAL_TIME_BETWEEN) {
             revert StakingContract_ToEarly();
+            }
+            calculateRewards(_user);
         }
-        calculateRewards(_user);
         _;
     }
         
@@ -125,14 +132,11 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
 
         if (i_stakingToken.balanceOf(msg.sender) < _amount) revert StakingContract_InsufficientBalance();
 
-        i_stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
-
         userData[msg.sender].stakedAmount = userData[msg.sender].stakedAmount + _amount;
 
-        //temporary added here
         s_totalStakedAmount = s_totalStakedAmount + _amount;
-        //That function is under construction
-        //calculateRewards(msg.sender);
+
+        i_stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
 
         emit Staked(msg.sender, _amount);
     }
@@ -181,9 +185,6 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
 
         UserData storage user = userData[_user];
 
-        if(block.timestamp < user.lastTimeStamp + MINIMAL_TIME_BETWEEN) {
-            revert StakingContract_ToEarly();
-        }
 
         if (user.stakedAmount == 0) {
             return;
