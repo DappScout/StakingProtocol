@@ -34,24 +34,33 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     uint256 internal s_rewardRate = 10;
     uint256 internal constant BASIS_POINTS = 10000;
 
-
     /*//////////////////////////////////////////////////////
                     STRUCTS
     //////////////////////////////////////////////////////*/
 
-    struct UserData{
+    struct UserData {
         uint256 stakedAmount;
         uint256 rewards;
         uint256 lastTimeStamp;
         uint256 rewardDebt;
     }
 
+    struct RewardEpoch {
+        uint256 rate;
+        uint256 timestamp;
+    }
+
+    /*//////////////////////////////////////////////////////
+                    ARRAY
+    //////////////////////////////////////////////////////*/
+
+    address[] public stakers;
+
     /*//////////////////////////////////////////////////////
                     MAPPINGS
     //////////////////////////////////////////////////////*/
 
     mapping(address => UserData) public userData;
-
 
     /*//////////////////////////////////////////////////////
                     EVENTS
@@ -62,6 +71,8 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     event RewardsClaimed(address indexed user, uint256 reward);
     event Paused();
     event Unpaused();
+    event RewardsCalculated(address indexed user, uint256 reward);
+    event RewardRateChanged(uint256 oldRate, uint256 newRate);
 
     /*//////////////////////////////////////////////////////
                     ERRORS
@@ -70,6 +81,7 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     error StakingContract_WrongAmountGiven();
     error StakingContract_InsufficientBalance();
     error StakingContract_ToEarly();
+    error StakingContract_ClaimFailed();
     error StakingContract_SomethingWentWrong();
 
     /*//////////////////////////////////////////////////////
@@ -86,9 +98,6 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     /*//////////////////////////////////////////////////////
                     MODIFIERS
     //////////////////////////////////////////////////////*/
-
-        
-    
 
     /*//////////////////////////////////////////////////////
                     MAIN FUNCTIONS
@@ -118,28 +127,27 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
 
         address staker = msg.sender;
 
-        if(staker == address(0)) revert StakingContract_SomethingWentWrong();
+        if (staker == address(0)) revert StakingContract_SomethingWentWrong();
 
         if (i_stakingToken.balanceOf(staker) < _amount) revert StakingContract_InsufficientBalance();
 
         UserData storage user = userData[staker];
 
         ///@notice Check if rewards calculations are needed
-        if(user.lastTimeStamp != 0){
-        ///@notice Check that reverts a call to prevent too frequent calls.
-        if(block.timestamp < user.lastTimeStamp + MINIMAL_TIME_BETWEEN) {
-            revert StakingContract_ToEarly();
-            }
-            
-            calculateRewards(staker);
-        }
-        
-        else {
-            user.lastTimeStamp = block.timestamp;
+
+        if (user.lastTimeStamp != 0) {
+            ///@notice Check that reverts a call to prevent too frequent calls.
+            if (block.timestamp < user.lastTimeStamp + MINIMAL_TIME_BETWEEN) {
+                revert StakingContract_ToEarly();
             }
 
-        
-        userData.stakedAmount = userData.stakedAmount + _amount;
+            calculateRewards(staker);
+        } else {
+            stakers.push(staker);
+            user.lastTimeStamp = block.timestamp;
+        }
+
+        user.stakedAmount = user.stakedAmount + _amount;
 
         s_totalStakedAmount = s_totalStakedAmount + _amount;
 
@@ -148,18 +156,18 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
         emit Staked(msg.sender, _amount);
     }
 
-
-
-
     /**
      * @notice Allows users to withdraw a portion of their staked tokens.
      *         Staking is allowed only when protocol is not paused by the owner
      */
     function unstake(uint256 _amount) public whenNotPaused nonReentrant {
-        
-        if(_amount > userData[msg.sender].stakedAmount) revert StakingContract_WrongAmountGiven(); // check if staked amount is greater than unstake amount
-        
+        if (_amount > userData[msg.sender].stakedAmount) revert StakingContract_WrongAmountGiven(); // check if staked amount is greater than unstake amount
+
         userData[msg.sender].stakedAmount = userData[msg.sender].stakedAmount - _amount;
+
+        ///@notice update total staked amount
+        s_totalStakedAmount = s_totalStakedAmount - _amount;
+
         i_stakingToken.safeTransfer(msg.sender, _amount);
 
         emit Unstaked(msg.sender, _amount);
@@ -169,12 +177,29 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
      * @notice Enables users to claim their accumulated rewards
      *         Staking is allowed only when protocol is not paused by the owner
      */
-    function claimRewards() public whenNotPaused nonReentrant updateReward(msg.sender){
+    function claimRewards() public whenNotPaused nonReentrant {
+        address sender = msg.sender;
+        uint256 protocolBalance = i_stakingToken.balanceOf(address(this));
 
+        if (userData[sender].lastTimeStamp == 0) revert StakingContract_ClaimFailed();
 
+        calculateRewards(sender);
+
+        uint256 rewardsToSend = userData[sender].rewards;
+
+        if (protocolBalance < rewardsToSend) revert StakingContract_ClaimFailed();
+        if (rewardsToSend == 0) revert StakingContract_ClaimFailed();
+
+        userData[sender].rewards = 0;
+
+        if (protocolBalance >= rewardsToSend) {
+            i_stakingToken.safeTransfer(sender, rewardsToSend);
+        } else {
+            revert StakingContract_ClaimFailed();
+        }
+
+        emit RewardsClaimed(sender, rewardsToSend);
     }
-
-
 
     /**
      * @notice Permits the owner to halt and resume staking operations.
@@ -188,18 +213,20 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
         _unpause();
     }
 
-
+    /**
+     * @notice Calculates and updates rewards for a user based on staking time and amount
+     * @dev Uses a rate of s_rewardRate basis points per time unit
+     * @param _user Address of the user to calculate rewards for
+     */
     function calculateRewards(address _user) internal {
-    // check precision loss mitigation  
-    // check first stake calulations - potencial precision loss
+        // check first stake calulations - potencial precision loss
 
         UserData storage user = userData[_user];
 
-
+        ///@dev skip if user's stake is zero
         if (user.stakedAmount == 0) {
             return;
         }
-
 
         uint256 passedTime = block.timestamp - user.lastTimeStamp;
 
@@ -207,18 +234,33 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
 
         user.rewards = user.rewards + newRewards;
 
+        ///@note check potencial overflows
+
         user.lastTimeStamp = block.timestamp;
 
-
-        ///@notice update total staked amount
-        s_totalStakedAmount = s_totalStakedAmount - user.stakedAmount;
-
-        ///Unde construction - Something is not working here - Check
+        emit RewardsCalculated(_user, user.rewards);
     }
 
     ///@notice Function for admin to change reward rate
-    function setRewardRate(uint256 _s_rewardRate) external onlyOwner{
+    function setRewardRate(uint256 _s_rewardRate) external onlyOwner {
+        uint256 oldRate = _s_rewardRate;
+        //calculate with the old rate
+        _calculateAllRewards();
+
+        //update to new rate
         s_rewardRate = _s_rewardRate;
+
+        emit RewardRateChanged(oldRate, s_rewardRate);
+    }
+
+    function _calculateAllRewards() internal {
+        for (uint256 i = 0; i < stakers.length; i++) {
+            address stakersAddress = stakers[i];
+
+            if (userData[stakersAddress].stakedAmount > 0) {
+                calculateRewards(stakersAddress);
+            }
+        }
     }
 
     /*//////////////////////////////////////////////////////
@@ -228,8 +270,6 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     function getStakedBalance(address _staker) public view returns (uint256) {
         return userData[_staker].stakedAmount;
     }
-
-
 
     function getRewardDebt(address _staker) public view returns (uint256) {
         return userData[_staker].rewardDebt;
