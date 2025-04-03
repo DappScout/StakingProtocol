@@ -282,14 +282,22 @@ contract StakingProtocolTest is Test {
         //assertEq(stakingContract.s_totalStakedAmount(), 50, "Total staked amount is not 50!");
 
         // check - events
-        assertEq(entries.length, 2, "Emission of one event was expected!");
-        bytes32 expectedEvent1 = keccak256("Unstaked(address,uint256)");
-        assertEq(entries[1].topics[0], expectedEvent1, "Unstaked event was not emitted!");
+        assertEq(entries.length, 3, "Emission of three events was expected!");
+        bytes32 expectedEvent1 = keccak256("RewardsCalculated(address,uint256)");
+        assertEq(entries[0].topics[0], expectedEvent1, "RewardsCalculated event was not emitted!");
 
-        address stakerAddress = address(uint160(uint256(entries[1].topics[1])));
+        bytes32 expectedEvent2 = keccak256("Unstaked(address,uint256)");
+        assertEq(entries[2].topics[0], expectedEvent2, "Unstaked event was not emitted!");
+
+        address stakerAddress = address(uint160(uint256(entries[2].topics[1])));
         assertEq(stakerAddress, userOne, "Wrong staker address in event!");
 
-        uint256 unstakedAmount = abi.decode(entries[1].data, (uint256));
+        uint256 unstakedAmount = abi.decode(entries[2].data, (uint256));
         assertEq(unstakedAmount, 50, "Wrong amount in event!");
+
+        // check - accounting
+        assertEq(tokenContract.balanceOf(userOne), 50, "User's balance is not 50!");
+        assertEq(stakingContract.getStakedBalance(userOne), 50, "User's stake is not 50!");
+        //assertEq(stakingContract.s_totalStakedAmount(), 50, "Total staked amount is not 50!");
     }
 }

@@ -163,6 +163,8 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     function unstake(uint256 _amount) public whenNotPaused nonReentrant {
         if (_amount > userData[msg.sender].stakedAmount) revert StakingContract_WrongAmountGiven(); // check if staked amount is greater than unstake amount
 
+        calculateRewards(msg.sender);
+
         userData[msg.sender].stakedAmount = userData[msg.sender].stakedAmount - _amount;
 
         ///@notice update total staked amount
