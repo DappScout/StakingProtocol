@@ -92,4 +92,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Contact✉️
 ![Simple Staking Protocol Banner](./assets/banner.png)
 
+[Linktree profile](https://linktr.ee/DappScout)
+[X Profile](https://x.com/DappScout)
+
 For questions or contributions, please open an issue on the repository.
