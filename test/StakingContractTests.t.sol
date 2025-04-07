@@ -47,7 +47,7 @@ contract StakingProtocolTest is Test {
         stakingContract = deployStakingContract.runStakingProtocol(owner, address(tokenContract), _minimalStakeAmount);
     }
 
-    function getContractBalance() public returns (uint256 _contractBalance) {
+    function getContractBalance() public returns (uint256) {
         contractBalance = stakingContract.i_stakingToken().balanceOf(address(stakingContract));
 
         return contractBalance;
@@ -81,6 +81,32 @@ contract StakingProtocolTest is Test {
     function approveUser(address _user, address _spender, uint256 _amount) public {
         vm.prank(_user);
         tokenContract.approve(_spender, _amount);
+    }
+
+
+    function testCheckInvariants() public {
+
+    ///@dev Total staked amount must always equal the sum of all individual user stakes
+        uint256 calculatedTotalStakedAmount;
+
+        for(uint256 i=0; i < stakingContract.getStakersLength(); i++){
+            calculatedTotalStakedAmount += stakingContract.getStakedBalanceOf(stakingContract.stakers(i));
+        }
+
+        assertEq(calculatedTotalStakedAmount,  stakingContract.s_totalStakedAmount(), "TotalStakedAmount mismatch!");
+    
+    ///@dev Contract's token balance must always be ≥ total staked amount + unclaimed rewards
+
+        assertTrue(getContractBalance() >= calculatedTotalStakedAmount + stakingContract.s_totalRewardsAmount());
+    
+    }
+
+    function stakeWithChecks(address _user, uint256 _amount) public{
+        vm.prank(_user);
+        stakingContract.stake(_amount);
+        
+        testCheckInvariants();
+        
     }
 
     /*///////////////////////////////////////////////////////////////////////////////////
@@ -211,8 +237,7 @@ contract StakingProtocolTest is Test {
 
         vm.recordLogs();
 
-        vm.prank(userOne);
-        stakingContract.stake(100);
+        stakeWithChecks(userOne, 100);
         Vm.Log[] memory entries = vm.getRecordedLogs();
         //check
 
@@ -267,8 +292,7 @@ contract StakingProtocolTest is Test {
         mintToken(userOne, 100);
         assertEq(tokenContract.balanceOf(userOne), 100, "User's balance is not 100!");
         approveUser(userOne, address(stakingContract), 100);
-        vm.prank(userOne);
-        stakingContract.stake(100);
+        stakeWithChecks(userOne, 100);
         vm.recordLogs();
 
         //act
@@ -278,7 +302,7 @@ contract StakingProtocolTest is Test {
         //check
 
         assertEq(tokenContract.balanceOf(userOne), 50, "User's balance is not 50!");
-        assertEq(stakingContract.getStakedBalance(userOne), 50, "User's stake is not 50!");
+        assertEq(stakingContract.getStakedBalanceOf(userOne), 50, "User's stake is not 50!");
         //assertEq(stakingContract.s_totalStakedAmount(), 50, "Total staked amount is not 50!");
 
         // check - events
@@ -297,7 +321,7 @@ contract StakingProtocolTest is Test {
 
         // check - accounting
         assertEq(tokenContract.balanceOf(userOne), 50, "User's balance is not 50!");
-        assertEq(stakingContract.getStakedBalance(userOne), 50, "User's stake is not 50!");
+        assertEq(stakingContract.getStakedBalanceOf(userOne), 50, "User's stake is not 50!");
         //assertEq(stakingContract.s_totalStakedAmount(), 50, "Total staked amount is not 50!");
     }
 }
