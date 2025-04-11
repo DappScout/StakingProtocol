@@ -23,7 +23,7 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     ///@notice The token that users can stake in this contract
     IERC20 public immutable i_stakingToken;
 
-    uint256 public immutable i_minimalStakeAmount;
+    uint256 public immutable i_minimalAmount;
 
     ///@notice A stake variable to track whole amount staked
     uint256 public s_totalStakedAmount;
@@ -31,9 +31,9 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
 
     uint256 public constant MINIMAL_CONTRACT_BALANCE_PERCENTAGE = 1000;
     uint256 public constant MINIMAL_TIME_BETWEEN = 1 hours;
-    uint256 internal constant BASIS_POINTS = 10000;
+    uint256 internal constant BASIS_POINTS = 100_000_000;
     ///@notice Parameter that defines a reward rate per second
-    uint256 internal s_rewardRate = 10;
+    uint256 internal s_rewardRate = 1;
 
     /*//////////////////////////////////////////////////////
                     STRUCTS
@@ -66,11 +66,8 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     event Staked(address indexed user, uint256 amount);
     event Unstaked(address indexed user, uint256 amount);
     event RewardsClaimed(address indexed user, uint256 reward);
-    event Paused();
-    event Unpaused();
     event RewardsCalculated(address indexed user, uint256 reward);
     event RewardRateChanged(uint256 oldRate, uint256 newRate);
-    event RewardReservesAreLow(uint256 minimalReserveAmount, uint256 minimalTotalReserves);
 
     /*//////////////////////////////////////////////////////
                     ERRORS
@@ -82,15 +79,16 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     error StakingContract_ClaimFailed();
     error StakingContract_SomethingWentWrong();
     error StakingContract_ContractInsufficientBalance();
+    error StakingContract_NoRewardsAvailable();
 
     /*//////////////////////////////////////////////////////
                     CONSTRUCTOR
     //////////////////////////////////////////////////////*/
 
-    constructor(address initialOwner, address _stakingTokenAddress, uint256 _i_minimalStakeAmount)
+    constructor(address initialOwner, address _stakingTokenAddress, uint256 _i_minimalAmount)
         Ownable(initialOwner)
     {
-        i_minimalStakeAmount = _i_minimalStakeAmount;
+        i_minimalAmount = _i_minimalAmount;
         i_stakingToken = IERC20(_stakingTokenAddress);
     }
 
@@ -125,7 +123,7 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
 
 
         //check if some dust amounts can disturb the protocol
-        if (_amount < i_minimalStakeAmount) revert StakingContract_WrongAmountGiven();
+        if (_amount == 0 ||_amount <= i_minimalAmount) revert StakingContract_WrongAmountGiven();
 
         address staker = msg.sender;
 
@@ -141,7 +139,7 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
         }
 
         ///@notice check for reserved token balance for rewards
-        _checkReserves(_amount);
+        _checkReserves();
 
 
         ///@notice Check if rewards calculations are needed
@@ -168,7 +166,16 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
      *         Staking is allowed only when protocol is not paused by the owner
      */
     function unstake(uint256 _amount) public whenNotPaused nonReentrant {
-        if (_amount > userData[msg.sender].stakedAmount) revert StakingContract_WrongAmountGiven(); // check if staked amount is greater than unstake amount
+
+        UserData storage user = userData[msg.sender];
+
+        if (_amount > user.stakedAmount) revert StakingContract_WrongAmountGiven(); // check if staked amount is greater than unstake amount
+        if (_amount == 0 || _amount < i_minimalAmount) revert StakingContract_WrongAmountGiven();
+
+        ///@notice Check that reverts a call to prevent too frequent calls.
+        if (user.lastTimeStamp != 0 && block.timestamp < user.lastTimeStamp + MINIMAL_TIME_BETWEEN) {
+            revert StakingContract_ToEarly();
+        }
 
         _calculateRewards(msg.sender);
 
@@ -196,15 +203,14 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
 
         uint256 rewardsToSend = userData[sender].rewards;
 
-        if (protocolBalance < rewardsToSend) revert StakingContract_ClaimFailed();
-        if (rewardsToSend == 0) revert StakingContract_ClaimFailed();
+        if (rewardsToSend == 0) revert StakingContract_NoRewardsAvailable();
 
         userData[sender].rewards = 0;
 
         if (protocolBalance >= rewardsToSend) {
             i_stakingToken.safeTransfer(sender, rewardsToSend);
         } else {
-            revert StakingContract_ClaimFailed();
+            revert StakingContract_ContractInsufficientBalance();
         }
 
         emit RewardsClaimed(sender, rewardsToSend);
@@ -224,7 +230,7 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
 
     ///@notice Function for admin to change reward rate
     function setRewardRate(uint256 _s_rewardRate) external onlyOwner {
-        uint256 oldRate = _s_rewardRate;
+        uint256 oldRate = s_rewardRate;
         //calculate with the old rate
         _calculateAllRewards();
 
@@ -278,7 +284,8 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
         }
     }
 
-    function _checkReserves(uint256 _stakedAmount) internal{
+    ///@notice Checks if the contract has enough reserves to cover the total staked amount and rewards + minimal reserve
+    function _checkReserves() internal view{
 
         uint256 minimalReserveAmount = (s_totalStakedAmount * MINIMAL_CONTRACT_BALANCE_PERCENTAGE)/ BASIS_POINTS; 
 
@@ -287,7 +294,6 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
         uint256 currentBalance = i_stakingToken.balanceOf(address(this));
         
         if(currentBalance < requiredAmountTotal){
-            emit RewardReservesAreLow(minimalReserveAmount ,requiredAmountTotal);
             revert StakingContract_ContractInsufficientBalance();
         }
     }
@@ -303,6 +309,10 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     function getRewardDebt(address _staker) public view returns (uint256) {
         return userData[_staker].rewardDebt;
     }
+
+    function getStakeTimestamp(address _staker) public view returns (uint256) {
+        return userData[_staker].lastTimeStamp;
+    }   
 
     function getStakersLength() public view returns (uint256){
         return stakers.length;

@@ -2,9 +2,9 @@
 pragma solidity 0.8.28;
 
 import {Test, Vm} from "lib/forge-std/src/Test.sol";
-import {StakingContract} from "../src/StakingContract.sol";
-import {ScoutToken} from "../src/TokenERC20.sol";
-import {DeployTokenERC20} from "../script/DeployProtocol.s.sol";
+import {StakingContract} from "../../src/StakingContract.sol";
+import {ScoutToken} from "../../src/TokenERC20.sol";
+import {DeployTokenERC20} from "../../script/DeployProtocol.s.sol";
 
 contract TokenTest is Test {
     ScoutToken scoutToken;
