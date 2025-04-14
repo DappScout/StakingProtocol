@@ -22,7 +22,8 @@ contract StakingProtocolTest is Test {
     address public userFour;
 
     uint256 public constant DEFAULT_TOKEN_SUPPLY = 10000;
-    uint256 public constant DEFAULT_STAKE_AMOUNT = 10;
+    uint256 public constant DEFAULT_STAKE_AMOUNT = 10 * 15;
+    uint256 public constant DECIMALS = 10**18;
 
     ///@dev values is updated contractBalance()
     uint256 public contractBalance;
@@ -48,10 +49,11 @@ contract StakingProtocolTest is Test {
         userFour = makeAddr("userfour");
 
         deployContracts(DEFAULT_TOKEN_SUPPLY, DEFAULT_STAKE_AMOUNT);
+        //mintToken(address(stakingContract), 9 * DECIMALS);
     }
 
     /*///////////////////////////////////////////////////////////////////////////////////
-    /////////////////////////////////Helper functions/////////////////////////////////////////
+    /////////////////////////////////Helper functions////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////*/
 
     function deployContracts(uint256 _initialSupply, uint256 _minimalStakeAmount) public {
@@ -98,6 +100,16 @@ contract StakingProtocolTest is Test {
         stakingContract.stake(_amount);
     }
 
+    function _calculateNewRewards(address _user) public returns(uint256 _rewards){
+            uint256 timePassed = block.timestamp - stakingContract.getStakeTimestamp(_user);
+
+            uint256 expectedRewards = (stakingContract.getStakedBalanceOf(_user) * stakingContract.s_rewardRate() * timePassed)  / stakingContract.BASIS_POINTS(); 
+
+
+
+
+            return expectedRewards;
+    }
 
     /*///////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////Helper Modifiers////////////////////////////////////
@@ -164,7 +176,8 @@ contract StakingProtocolTest is Test {
         //   Then the stake should revert
 
         //setup
-        uint256 _amount = 100;
+        uint256 _amount = 100 * DECIMALS;
+        mintToken(address(stakingContract), _amount);
 
         mintToken(userOne, _amount);
         approveUser(userOne, address(stakingContract), _amount);
@@ -186,7 +199,8 @@ contract StakingProtocolTest is Test {
         //   Then the unstake should revert
 
         //setup
-        uint256 _amount = 100;
+        uint256 _amount = 100 * DECIMALS;
+        mintToken(address(stakingContract), _amount);
         _setupStakedUser(userOne, _amount);
         //act
         _setPauseState(owner, true);
@@ -204,7 +218,8 @@ contract StakingProtocolTest is Test {
         //   Then the claim should revert
 
         //setup
-        uint256 _amount = 100;
+        uint256 _amount = 100 * DECIMALS;
+        mintToken(address(stakingContract), _amount);
         _setupStakedUser(userOne, _amount);
         assertEq(getStakerBalance(userOne), 0, "User has not staked!");
         //act
@@ -241,10 +256,12 @@ contract StakingProtocolTest is Test {
         assertEq(stakingContract.paused(), false, "Protocol is paused!");
         _setPauseState(owner, true);
         //act
-        vm.expectEmit(false, false, false, true);
-        emit RewardRateChanged(1, 2);
-        vm.prank(owner);
-        stakingContract.setRewardRate(2);
+        vm.expectEmit(false, false, false, false);
+        emit RewardRateChanged(stakingContract.s_rewardRate(), 2 * stakingContract.s_rewardRate());
+        vm.startPrank(owner);
+        stakingContract.setRewardRate(2 * stakingContract.s_rewardRate());
+        vm.stopPrank();
+        
         //check
         assertEq(stakingContract.paused(), true, "Protocol isnt paused!");
     }
@@ -256,7 +273,8 @@ contract StakingProtocolTest is Test {
         //   Then they should work normally
 
         //setup
-        uint256 stakeAmount = 100;
+        uint256 stakeAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
         _setupStakedUser(userOne, stakeAmount);
         assertEq(stakingContract.getStakedBalanceOf(userOne), stakeAmount, "User has not staked!");
         _setPauseState(owner, true);
@@ -264,7 +282,6 @@ contract StakingProtocolTest is Test {
         
         //act
         assertEq(stakingContract.getStakedBalanceOf(userOne), stakeAmount, "View function does not work!");
-        assertEq(stakingContract.getRewardDebt(userOne), 0, "View function does not work!");
         assertEq(stakingContract.getStakersLength(), 1, "View function does not work!");
     }
 
@@ -341,7 +358,8 @@ contract StakingProtocolTest is Test {
         //   And stake should work again
 
         //setup
-        uint256 stakeAmount = 100;
+        uint256 stakeAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
 
         assertEq(stakingContract.paused(), false, "Protocol is paused!");
         _setPauseState(owner, true);
@@ -366,7 +384,8 @@ contract StakingProtocolTest is Test {
         //   And unstake should work again
 
         //setup
-        uint256 stakeAmount = 100;
+        uint256 stakeAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
 
         _setupStakedUser(userOne, stakeAmount);
 
@@ -388,7 +407,6 @@ contract StakingProtocolTest is Test {
 
     }
 
-/*
     function testUnpause_RestoresClaimFunctionality() public {
         // Scenario: Unpausing contract restores functionality
         //   Given the Staking contract is paused
@@ -396,8 +414,9 @@ contract StakingProtocolTest is Test {
         //   Then claim rewards should work again
 
         //setup
-        uint256 stakeAmount = 100;
-        uint256 additionalBalance = 100;
+        uint256 stakeAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
+        uint256 additionalBalance = 100 * DECIMALS;
         mintToken(address(stakingContract), additionalBalance);
 
         _setupStakedUser(userOne, stakeAmount);
@@ -411,14 +430,14 @@ contract StakingProtocolTest is Test {
 
         _setPauseState(owner, false);
         assertEq(stakingContract.paused(), false, "Protocol is paused!");
-        console.log("Protocols balance:", getContractBalanceOf());
+
         vm.prank(userOne);
         stakingContract.claimRewards();
 
         //check
-        assertEq(stakingContract.getRewardDebt(userOne), 0, "User has not claimed rewards!");
+        assertEq(stakingContract.getRewards(userOne), 0, "User has not claimed rewards!");
     }
-*/
+
     function testUnpause_WhenAlreadyUnpaused() public {
         // Scenario: Unpausing contract when already unpaused
         //   Given the Staking contract is unpaused
@@ -447,9 +466,10 @@ contract StakingProtocolTest is Test {
         //   Then Alice's staked balance should be 100 tokens
 
         //setup
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
 
-        assertEq(getContractBalanceOf(), 0, "Balance is not zero!");
+        assertEq(getContractBalanceOf(), stakedAmount, "Initial contract balance is incorrect!");
 
         //act
 
@@ -469,16 +489,17 @@ contract StakingProtocolTest is Test {
         //   Then the contract's balance should be 100 tokens
 
         //setup
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
 
-        assertEq(getContractBalanceOf(), 0, "Balance is not zero!");
+        assertEq(getContractBalanceOf(), stakedAmount, "Initial contract balance is incorrect!");
 
         //act
         _setupStakedUser(userOne, stakedAmount);
         
         //check
 
-        assertEq(getContractBalanceOf(), stakedAmount, "Contract's balance is not 100!");
+        assertEq(getContractBalanceOf(), stakedAmount * 2, "Contract's balance is incorrect!");
     }
 
     function testStake_UpdatesTotalStakedAmount() public{
@@ -490,9 +511,10 @@ contract StakingProtocolTest is Test {
         //    Then the total staked amount should be 100 tokens
 
         //setup
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
 
-        assertEq(getContractBalanceOf(), 0, "Balance is not zero!");
+        assertEq(getContractBalanceOf(), stakedAmount, "Initial contract balance is incorrect!");
         //act
 
         _setupStakedUser(userOne, stakedAmount);
@@ -511,9 +533,13 @@ contract StakingProtocolTest is Test {
         //   Then the contract should log a "Staked" event with (Alice, 100)
 
         //setup
-        uint256 stakedAmount = 100;
 
-        assertEq(getContractBalanceOf(), 0, "Balance is not zero!");
+        
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
+        mintToken(address(stakingContract), stakedAmount);
+
+        // assertEq(getContractBalanceOf(), 0, "Balance is not zero!");
         mintToken(userOne, stakedAmount);
         assertEq(tokenContract.balanceOf(userOne), stakedAmount, "User's balance is not 100!");
         approveUser(userOne, address(stakingContract), stakedAmount);
@@ -536,9 +562,10 @@ contract StakingProtocolTest is Test {
         //   Then Alice's stake timestamp should be updated
 
         //setup
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
 
-        assertEq(getContractBalanceOf(), 0, "Balance is not zero!");
+        assertEq(getContractBalanceOf(), stakedAmount, "Initial contract balance is incorrect!");
         //act
 
         _setupStakedUser(userOne, stakedAmount);
@@ -557,7 +584,8 @@ contract StakingProtocolTest is Test {
         //   Then Alice's staked balance should be 100 tokens
 
         //setup
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
 
         //act & check
         _setupStakedUser(userOne, stakedAmount);
@@ -579,9 +607,10 @@ contract StakingProtocolTest is Test {
         deployContracts(DEFAULT_TOKEN_SUPPLY, minimalStakeAmount);
 
         uint256 stakedAmount = 99;
+        mintToken(address(stakingContract), stakedAmount);
         mintToken(userOne, stakedAmount);
         approveUser(userOne, address(stakingContract), stakedAmount);
-        assertEq(getContractBalanceOf(), 0, "Contract balance is not zero!");
+        assertEq(getContractBalanceOf(), stakedAmount, "Initial contract balance is incorrect!");
 
 
         //act & check
@@ -598,18 +627,19 @@ contract StakingProtocolTest is Test {
         //   Then Alice's staked balance should be 100_000_000_000 tokens
 
         //setup
-        uint256 stakedAmount = 100_000_000_000;
+        uint256 stakedAmount = 100_000 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
         mintToken(userOne, stakedAmount);
         approveUser(userOne, address(stakingContract), stakedAmount);
-        assertEq(getContractBalanceOf(), 0, "Contract balance is not zero!");
+        assertEq(getContractBalanceOf(), stakedAmount, "Initial contract balance is incorrect!");
 
         //act & check
         _setupStakedUser(userOne, stakedAmount);
         
         //check
         assertEq(stakingContract.getStakedBalanceOf(userOne), stakedAmount, "User's stake is not 100_000_000_000!");
-        console.log("User's stake is 100_000_000_000!", stakingContract.getStakedBalanceOf(userOne));
-        console.log("Contract balance is", getContractBalanceOf());
+
+
     }
 
     function testStake_WithoutApproval() public{
@@ -619,9 +649,10 @@ contract StakingProtocolTest is Test {
         // Then the call should revert
 
         //setup
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
         mintToken(userOne, stakedAmount);
-        assertEq(getContractBalanceOf(), 0, "Contract balance is not zero!");
+        assertEq(getContractBalanceOf(), stakedAmount, "Initial contract balance is incorrect!");
 
         //act & check
         vm.expectRevert(abi.encodeWithSignature("ERC20InsufficientAllowance(address,uint256,uint256)", address(stakingContract), 0, stakedAmount));
@@ -638,10 +669,11 @@ contract StakingProtocolTest is Test {
 
         //setup
         uint256 aproveAmount = 50;
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
         mintToken(userOne, stakedAmount);
         approveUser(userOne, address(stakingContract), aproveAmount);
-        assertEq(getContractBalanceOf(), 0, "Contract balance is not zero!");
+        assertEq(getContractBalanceOf(), stakedAmount, "Initial contract balance is incorrect!");
 
         //act & check
         vm.expectRevert(abi.encodeWithSignature("ERC20InsufficientAllowance(address,uint256,uint256)", address(stakingContract), aproveAmount, stakedAmount));
@@ -657,9 +689,10 @@ contract StakingProtocolTest is Test {
         // Then the call should revert
 
         //setup
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
         mintToken(userOne, stakedAmount / 2);
-        assertEq(getContractBalanceOf(), 0, "Contract balance is not zero!");
+        assertEq(getContractBalanceOf(), stakedAmount, "Initial contract balance is incorrect!");
         approveUser(userOne, address(stakingContract), stakedAmount);
 
         //act & check
@@ -676,10 +709,11 @@ contract StakingProtocolTest is Test {
         // Then call should revert
 
         //setup
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
         mintToken(userOne, stakedAmount);
         approveUser(userOne, address(stakingContract), stakedAmount);
-        assertEq(getContractBalanceOf(), 0, "Contract balance is not zero!");
+        assertEq(getContractBalanceOf(), stakedAmount, "Initial contract balance is incorrect!");
         
         //act & check
         _setupStakedUser(userOne, stakedAmount);
@@ -698,16 +732,19 @@ contract StakingProtocolTest is Test {
 
         //setup
         uint256 intervals = 10;
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
+        mintToken(address(stakingContract), stakedAmount);
 
         //act
         for(uint256 i = 0; i < intervals; i++){
             vm.warp(block.timestamp + stakingContract.MINIMAL_TIME_BETWEEN());
             _setupStakedUser(userOne, stakedAmount);
+
         }
 
         //check
-        assertEq(stakingContract.getStakedBalanceOf(userOne), stakedAmount * 10, "User's stake is not 1000!");
+        assertEq(stakingContract.getStakedBalanceOf(userOne),stakedAmount * intervals, "User's stake is not 1000!");
 
     }
 
@@ -721,7 +758,9 @@ contract StakingProtocolTest is Test {
 
         //setup
         uint256 intervals = 10;
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
+        mintToken(address(stakingContract), stakedAmount);
 
         //act
         for(uint256 i = 0; i < intervals; i++){
@@ -729,10 +768,11 @@ contract StakingProtocolTest is Test {
             address user = makeAddr(Strings.toString(i));
             _setupStakedUser(user, stakedAmount);
             assertEq(stakingContract.getStakedBalanceOf(user), stakedAmount, "User's stake is not 100");
+
         }
 
         //check
-        assertEq(getContractBalanceOf(), stakedAmount * intervals, "User's stake is not 1000!");
+        assertEq(getContractBalanceOf(), (stakedAmount * 2) + (stakedAmount * intervals), "Contract balance is not correct!");
     }
 
     function testStake_WithZeroAmount() public{
@@ -745,7 +785,7 @@ contract StakingProtocolTest is Test {
         //setup
         uint256 stakedAmount = 0;
         mintToken(userOne, stakedAmount);
-        assertEq(getContractBalanceOf(), 0, "Contract balance is not zero!");
+        assertEq(getContractBalanceOf(), stakedAmount, "Initial contract balance is incorrect!");
 
         //act & check
         vm.expectRevert(abi.encodeWithSignature("StakingContract_WrongAmountGiven()"));
@@ -762,9 +802,10 @@ contract StakingProtocolTest is Test {
         // Then the call should revert
 
         //setup
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
         mintToken(userOne, stakedAmount);
-        assertEq(getContractBalanceOf(), 0, "Contract balance is not zero!");
+        assertEq(getContractBalanceOf(), stakedAmount, "Initial contract balance is incorrect!");
         _setPauseState(owner, true);
 
         //act & check
@@ -781,8 +822,9 @@ contract StakingProtocolTest is Test {
         // Then Alice's address should be added to the stakers array
 
         //setup
-        uint256 stakedAmount = 100;
-        assertEq(getContractBalanceOf(), 0, "Contract balance is not zero!");
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
+        assertEq(getContractBalanceOf(), stakedAmount, "Initial contract balance is incorrect!");
 
         //act
         _setupStakedUser(userOne, stakedAmount);
@@ -803,13 +845,14 @@ contract StakingProtocolTest is Test {
 
 
         //setup
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
         _setupStakedUser(userOne, stakedAmount);
         vm.warp(block.timestamp + 1 hours);
 
         //act & check
         vm.prank(userOne);
-        stakingContract.unstake(50);
+        stakingContract.unstake(50 * DECIMALS);
     }    
 
     function testUnstake_ChangesUserBalance() public {
@@ -820,15 +863,16 @@ contract StakingProtocolTest is Test {
 
 
         //setup
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
         _setupStakedUser(userOne, stakedAmount);
         vm.warp(block.timestamp + 1 hours);
         //act & check
         vm.prank(userOne);
-        stakingContract.unstake(50);
+        stakingContract.unstake(stakedAmount / 2);
 
         //check
-        assertEq(stakingContract.getStakedBalanceOf(userOne), 50, "User's stake is not 50!");
+        assertEq(stakingContract.getStakedBalanceOf(userOne), stakedAmount / 2, "User's stake is not 50!");
     }   
 
     function testUnstake_ChangesContractBalance() public {
@@ -839,16 +883,17 @@ contract StakingProtocolTest is Test {
 
 
         //setup
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
         _setupStakedUser(userOne, stakedAmount);
         vm.warp(block.timestamp + 1 hours);
 
         //act & check
         vm.prank(userOne);
-        stakingContract.unstake(50);
+        stakingContract.unstake(stakedAmount / 2);
 
         //check
-        assertEq(getContractBalanceOf(), 50, "Contract's balance is not 50!");
+        assertEq(getContractBalanceOf(), stakedAmount + (stakedAmount / 2), "Contract's balance is incorrect!");
     }  
 
     function testUnstake_RevertIfNotEnoughStaked() public {
@@ -859,9 +904,10 @@ contract StakingProtocolTest is Test {
         //   Then call should revert
 
         //setup
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
         _setupStakedUser(userOne, stakedAmount);
-        assertEq(getContractBalanceOf(), stakedAmount, "Contract balance is not 100!");
+        assertEq(getContractBalanceOf(), stakedAmount * 2, "Contract balance is incorrect!");
         vm.warp(block.timestamp + 1 hours);
 
         //act & check
@@ -877,9 +923,10 @@ contract StakingProtocolTest is Test {
         //   Then call should revert
 
         //setup
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
         _setupStakedUser(userOne, stakedAmount);
-        assertEq(getContractBalanceOf(), stakedAmount, "Contract balance is not 100!");
+        assertEq(getContractBalanceOf(), stakedAmount * 2, "Contract balance is incorrect!");
         vm.warp(block.timestamp + 1 hours);
 
         //act & check
@@ -897,19 +944,20 @@ contract StakingProtocolTest is Test {
 
         //setup
 
-        uint256 minimalStakeAmount = 99;
+        uint256 minimalStakeAmount = 99 * DECIMALS;
         deployContracts(DEFAULT_TOKEN_SUPPLY, minimalStakeAmount);
 
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
         _setupStakedUser(userOne, stakedAmount);
-        assertEq(getContractBalanceOf(), stakedAmount, "Contract balance is not 100!");
+        assertEq(getContractBalanceOf(), stakedAmount * 2, "Contract balance is incorrect!");
         vm.warp(block.timestamp + 1 hours);
 
         //act & check
         vm.prank(userOne);
         stakingContract.unstake(minimalStakeAmount);
         assertEq(stakingContract.getStakedBalanceOf(userOne), stakedAmount - minimalStakeAmount, "User's stake is not 1!");
-        assertEq(getContractBalanceOf(), stakedAmount - minimalStakeAmount, "Contract balance is not 1!");
+        assertEq(getContractBalanceOf(), stakedAmount + (stakedAmount - minimalStakeAmount), "Contract balance is incorrect!");
         
     }
 
@@ -920,9 +968,10 @@ contract StakingProtocolTest is Test {
         //   Then call should revert
 
         //setup
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
         _setupStakedUser(userOne, stakedAmount);
-        assertEq(getContractBalanceOf(), stakedAmount, "Contract balance is not 100!");
+        assertEq(getContractBalanceOf(), stakedAmount * 2, "Contract balance is incorrect!");
         vm.warp(block.timestamp + 1 hours);
 
         //act & check
@@ -939,9 +988,10 @@ contract StakingProtocolTest is Test {
         //   Then call should revert
 
         //setup
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
         _setupStakedUser(userOne, stakedAmount);
-        assertEq(getContractBalanceOf(), stakedAmount, "Contract balance is not 100!");
+        assertEq(getContractBalanceOf(), stakedAmount * 2, "Contract balance is incorrect!");
         vm.warp(block.timestamp + 1 hours);
 
         //act & check
@@ -957,9 +1007,10 @@ contract StakingProtocolTest is Test {
         //   Then "Unstaked" event should be emitted
 
         //setup
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
         _setupStakedUser(userOne, stakedAmount);
-        assertEq(getContractBalanceOf(), stakedAmount, "Contract balance is not 100!");
+        assertEq(getContractBalanceOf(), stakedAmount * 2, "Contract balance is incorrect!");
         vm.warp(block.timestamp + 1 hours);
 
         //act & check
@@ -976,8 +1027,9 @@ contract StakingProtocolTest is Test {
         //   Then call should revert
 
         //setup
-        uint256 stakedAmount = 100;
-        assertEq(getContractBalanceOf(), 0, "Contract balance is not zero!");
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
+        assertEq(getContractBalanceOf(), stakedAmount, "Initial contract balance is incorrect!");
 
         //act & check
         vm.prank(userOne);
@@ -993,16 +1045,17 @@ contract StakingProtocolTest is Test {
         //   And contract balance should decrease to 50 tokens
 
         //setup
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
         _setupStakedUser(userOne, stakedAmount);
-        assertEq(getContractBalanceOf(), stakedAmount, "Contract balance is not 100!");
+        assertEq(getContractBalanceOf(), stakedAmount * 2, "Contract balance is incorrect!");
         vm.warp(block.timestamp + 1 hours);
 
         //act & check
         vm.prank(userOne);
         stakingContract.unstake(stakedAmount / 2);
         assertEq(stakingContract.getStakedBalanceOf(userOne), stakedAmount / 2, "User's stake is not 50!");
-        assertEq(getContractBalanceOf(), stakedAmount / 2, "Contract balance is not 50!");
+        assertEq(getContractBalanceOf(), stakedAmount + (stakedAmount / 2), "Contract balance is incorrect!");
     }
 
     function testUnstake_AllOfStake() public {
@@ -1013,16 +1066,17 @@ contract StakingProtocolTest is Test {
         //   And contract balance should decrease to 0 tokens
 
         //setup
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
         _setupStakedUser(userOne, stakedAmount);
-        assertEq(getContractBalanceOf(), stakedAmount, "Contract balance is not 100!");
+        assertEq(getContractBalanceOf(), stakedAmount * 2, "Contract balance is incorrect!");
         vm.warp(block.timestamp + 1 hours);
 
         //act & check
         vm.prank(userOne);
         stakingContract.unstake(stakedAmount);
         assertEq(stakingContract.getStakedBalanceOf(userOne), 0, "User's stake is not 0!");
-        assertEq(getContractBalanceOf(), 0, "Contract balance is not 0!");
+        assertEq(getContractBalanceOf(), stakedAmount, "Contract balance should be equal to the initial mint!");
     }
         
     function testUnstake_WithRewards() public {
@@ -1039,9 +1093,10 @@ contract StakingProtocolTest is Test {
         //   And second call should revert
 
         //setup
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
         _setupStakedUser(userOne, stakedAmount);
-        assertEq(getContractBalanceOf(), stakedAmount, "Contract balance is not 100!");
+        assertEq(getContractBalanceOf(), stakedAmount * 2, "Contract balance is incorrect!");
         vm.warp(block.timestamp + 1 hours);
 
         //act & check
@@ -1065,7 +1120,8 @@ contract StakingProtocolTest is Test {
 
         //setup
         uint256 intervals = 10;
-        uint256 stakedAmount = 100;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
 
         _setupStakedUser(userOne, stakedAmount);
         assertEq(stakingContract.getStakedBalanceOf(userOne), stakedAmount, "Alice stake is not correct");
@@ -1080,7 +1136,7 @@ contract StakingProtocolTest is Test {
         }
 
         //check
-        assertEq(getContractBalanceOf(), 50, "Contract balance is not 50!");
+        assertEq(getContractBalanceOf(), stakedAmount + (stakedAmount / 2), "Contract balance is incorrect!");
     }
 
     function testUnstake_ByMultipleUsers() public{
@@ -1088,12 +1144,14 @@ contract StakingProtocolTest is Test {
         //   Given multiple users have previously staked tokens
         //   When they call "unstake()" on the Staking contract
         //   Then their staked balances should decrease
-        //   And contract balance should decrease
+        //   And amount of tokens unstaked should be equal to the amount previously staked
+        //   And contract balance should be equal to the initial mint
 
         //setup
         uint256 intervals = 10;
-        uint256 stakedAmount = 100;
-        uint256 unstakeAmount = 50;
+        uint256 stakedAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakedAmount);
+        uint256 unstakeAmount = stakedAmount / 2;
         address[] memory users = new address[](intervals);
 
         
@@ -1115,32 +1173,33 @@ contract StakingProtocolTest is Test {
         }
 
         //check
-        assertEq(getContractBalanceOf(), (stakedAmount * intervals) - (unstakeAmount * intervals), "Contract balance is not correct!");
+        assertEq(getContractBalanceOf(), (stakedAmount + stakedAmount * intervals) - (unstakeAmount * intervals), "Contract balance is not correct!");
     }
 
-    
-
-
-/*
-    function unstake(uint256 _amount) public whenNotPaused nonReentrant {
-        if (_amount > userData[msg.sender].stakedAmount) revert StakingContract_WrongAmountGiven(); // check if staked amount is greater than unstake amount
-
-        _calculateRewards(msg.sender);
-
-        userData[msg.sender].stakedAmount = userData[msg.sender].stakedAmount - _amount;
-
-        ///@notice update total staked amount
-        s_totalStakedAmount = s_totalStakedAmount - _amount;
-
-        i_stakingToken.safeTransfer(msg.sender, _amount);
-
-        emit Unstaked(msg.sender, _amount);
-    }
-*/
 
     /*///////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////Claim Rewards tests/////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////*/
+
+    function testClaimRewards_WithZeroRewards() public{
+        // Scenario: User claims rewards with zero rewards
+        //   Given the Staking contract is active
+        //   When the user calls "claimRewards()"
+        //   Then the call should revert with correct error
+
+        //setup
+        uint256 stakeAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
+        _setupStakedUser(userOne, stakeAmount);
+        assertEq(stakingContract.getStakedBalanceOf(userOne), stakeAmount, "User's stake is not correct");
+
+        //act & check
+        vm.expectRevert(abi.encodeWithSignature("StakingContract_NoRewardsAvailable()"));
+        vm.prank(userOne);
+        stakingContract.claimRewards();
+    } 
+
+
 
     function testClaimRewards_WhilePaused() public {
         // Scenario: User claims rewards while contract is paused
@@ -1149,7 +1208,8 @@ contract StakingProtocolTest is Test {
         //   Then call should revert
 
         //setup
-        uint256 stakeAmount = 100;
+        uint256 stakeAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
         
         //act
         _setupStakedUser(userOne, stakeAmount);
@@ -1161,40 +1221,401 @@ contract StakingProtocolTest is Test {
         vm.prank(userOne);
         stakingContract.claimRewards();
     }
-/*
-    function testClaimRewards_DoNotRevertAfterUnpaused() public {
-        // Scenario: User claims rewards after contract is unpaused
-        //   Given the Staking contract is paused
-        //   And user has staked tokens
-        //   And contract is unpaused
-        //   When the user calls "claimRewards()" after contract is unpaused
-        //   Then call should not revert
+
+    function testClaimRewards_ByUser() public{
+        // Scenario: User claims rewards
+        // Given the User earned some rewards
+        // When the user calls "claimRewards()"
+        // Then the user should receive the rewards
 
         //setup
-        uint256 stakeAmount = 100;
+        uint256 stakeAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
         
         //act
         _setupStakedUser(userOne, stakeAmount);
+        assertEq(stakingContract.getStakedBalanceOf(userOne), stakeAmount, "User's stake is not correct");
+        vm.warp(block.timestamp + 1 hours);
 
-
-
-        _setPauseState(owner, true);
-        _setPauseState(owner, false);
-        
         //check
         vm.prank(userOne);
         stakingContract.claimRewards();
 
     }
-*/
+
+    function testClaimRewards_ResetsRewards() public{
+        // Scenario: User claims rewards
+        // Given the User earned some rewards
+        // When the user calls "claimRewards()"
+        // Then the user should receive the rewards
+        // And the user's rewards should be reset
+
+        //setup
+        uint256 stakeAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
+        
+        //act
+        _setupStakedUser(userOne, stakeAmount);
+        assertEq(stakingContract.getStakedBalanceOf(userOne), stakeAmount, "User's stake is not correct");
+        assertEq(stakingContract.getRewards(userOne), 0, "User's rewards is not correct");
+        vm.warp(block.timestamp + 1 hours);
+
+        //check
+        vm.prank(userOne);
+        stakingContract.claimRewards();
+        assertEq(stakingContract.getRewards(userOne), 0, "User's rewards is not correct");
+
+    }
+
+    function testClaimRewards_TransfersCorrectAmount() public{
+        // Scenario: Correct amount of rewards is transferred
+        // Given the user has staked tokens
+        // And rewards have been calculated
+        // When the user calls "claimRewards()"
+        // Then the user should receive the correct amount of rewards
+
+        //setup
+        uint256 stakeAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
+        
+        _setupStakedUser(userOne, stakeAmount);
+        assertEq(stakingContract.getStakedBalanceOf(userOne), stakeAmount, "User's stake is not correct");
+        assertEq(stakingContract.getRewards(userOne), 0, "User's rewards is not correct");
+        vm.warp(block.timestamp + 1 hours);
+
+        //act
+        uint256 amountBefore = getStakerBalance(userOne);
+        uint256 newRewards = _calculateNewRewards(userOne);
+
+        vm.prank(userOne);
+        stakingContract.claimRewards();
+
+        //check
+        assertEq(stakingContract.getRewards(userOne), 0, "User's rewards is not correct");
+        assertEq(getStakerBalance(userOne), amountBefore + newRewards, "User's balance is not correct");
+    } 
+
+        
+
+    function testClaimRewards_ByNonStaker() public  {
+        //Scenario: User claims rewards by non-staker
+        //Given the user has not staked tokens
+        //When the user calls "claimRewards()"
+        //Then the call should revert
+
+        //setup
+        uint256 stakeAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
+
+        //act & check
+        vm.expectRevert(abi.encodeWithSignature("StakingContract_ClaimFailed()"));
+        vm.prank(userOne);
+        stakingContract.claimRewards();
+
+    } 
+
+    function testClaimRewards_AfterContractUnpaused() public{
+        //Scenario: User claims rewards after contract is unpaused
+        //Given the Staking contract is paused
+        //And user has staked tokens
+        //And contract is unpaused
+        //When the user calls "claimRewards()"
+        //Then the user should receive the rewards
+
+        //setup
+        uint256 stakeAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
+        _setupStakedUser(userOne, stakeAmount);
+        vm.warp(block.timestamp + 1 hours);
+
+        //act
+        _setPauseState(owner, true);
+        _setPauseState(owner, false);
+
+        //check
+        vm.prank(userOne);
+        stakingContract.claimRewards();
+
+        assertEq(stakingContract.getRewards(userOne), 0, "User's rewards is not correct");
+    }
+
+    function testClaimRewards_AfterMultipleStakes() public{
+        //Scenario: User claims rewards after multiple stakes
+        //Given the user has staked tokens multiple times
+        //When the user calls "claimRewards()" after multiple stakes
+        //Then the user should receive the rewards
+
+        //setup
+        uint256 stakeAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
+        
+        for(uint256 i = 0; i < 5; i++){
+            _setupStakedUser(userOne, stakeAmount);
+            vm.warp(block.timestamp + 1 hours);
+        }
+        //act
+        vm.prank(userOne);
+        stakingContract.claimRewards();
+
+        //check
+        assertEq(stakingContract.getRewards(userOne), 0, "User's rewards is not correct");  
+    }
+
+    function testClaimRewards_UpdatesTotalRewardsAmount() public{
+        //Scenario: User claims rewards updates total rewards amount
+        //Given the user has staked tokens
+        //When the user calls "claimRewards()"
+        //Then the total rewards amount should be updated
+
+        //setup
+        uint256 stakeAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
+        _setupStakedUser(userOne, stakeAmount);
+        vm.warp(block.timestamp + 1 hours);
+
+        //act
+        uint256 newRewards = _calculateNewRewards(userOne);
+        vm.prank(userOne);
+        stakingContract.claimRewards();
+
+        //check
+        assertEq(stakingContract.getTotalRewardsAmount(), newRewards, "User's rewards is not correct");
+    }
+
+    function testClaimRewards_EmitEvent() public{
+        // Scenario: User claims rewards emits event
+        // Given the user has staked tokens
+        // When the user calls "claimRewards()"
+        // Then the "RewardsClaimed" event should be emitted
+
+        //setup
+        uint256 stakeAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
+        _setupStakedUser(userOne, stakeAmount);
+        vm.warp(block.timestamp + 1 hours);
+
+        //act & check
+        vm.expectEmit(true, false, false, true);
+        emit RewardsClaimed(userOne, _calculateNewRewards(userOne));
+        vm.prank(userOne);
+        stakingContract.claimRewards();
+
+
+    }
+ 
+
+    function testClaimRewards_WhenContractBalanceIsNotEnough() public {
+        // Scenario: User claims rewards when contract balance is not enough
+        //   Given the user has staked tokens
+        //   And contract balance is less than rewards
+        //   When the user calls "claimRewards()"
+        //   Then call should revert
+
+        //setup
+        uint256 stakeAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
+
+        _setupStakedUser(userOne, stakeAmount);
+        vm.warp(block.timestamp + 300000 days);
+
+        //act
+
+        //check
+        vm.prank(userOne);
+        vm.expectRevert(abi.encodeWithSignature("StakingContract_ClaimFailed()"));
+        stakingContract.claimRewards();
+        
+
+    }
+
+
+    /*///////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////Calculate Rewards tests/////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////*/
+
+    function testCalculateRewards_ByUser() public {
+
+        // Scenario: User calculates rewards
+        //   Given the protocol is active
+        //   When the user that previously staked calls "stake()"
+        //   Then the user's rewards should be calculated
+
+        //setup
+        uint256 stakeAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
+
+        _setupStakedUser(userOne, stakeAmount);
+        
+        vm.warp(block.timestamp + 1 days);
+
+        //act
+
+        uint256 usersRewards = _calculateNewRewards(userOne) + stakingContract.getRewards(userOne);
+
+        _setupStakedUser(userOne, stakeAmount);
+        //check
+        assertEq(stakingContract.getRewards(userOne), usersRewards, "User's rewards is not correct");
+
+    }
+
+    function testCalculateRewards_ChangeLastTimeStamp() public{
+        // Scenario: User calculates rewards
+        //   Given the user has staked tokens
+        //   When the user calls "claimRewards()" after 1 hour
+        //   Then the user should receive the expected rewards
+
+        //setup
+
+        uint256 stakeAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
+
+
+        //act
+        _setupStakedUser(userOne, stakeAmount);
+        assertEq(stakingContract.getStakedBalanceOf(userOne), stakeAmount, "User's stake is not correct");
+        assertEq(stakingContract.getStakeTimestamp(userOne), block.timestamp, "User's stake timestamp is not correct");
+        
+        vm.warp(block.timestamp + 1 hours);
+
+        //check
+        vm.prank(userOne);
+        stakingContract.claimRewards();
+        assertEq(stakingContract.getStakeTimestamp(userOne), block.timestamp, "User's stake timestamp is not correct");
+    }
+
+    function testCalculateRewards_SkippedWhenNewUser() public{
+        // Scenario: User calculates rewards
+        //   Given the user did not stake tokens
+        //   When the user calls "stake()"
+        //   Then the user rewards calculations should be skipped
+
+        //setup
+
+        uint256 stakeAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
+
+        //act
+        _setupStakedUser(userOne, stakeAmount);
+        assertEq(stakingContract.getStakedBalanceOf(userOne), stakeAmount, "User's stake is not correct");
+        assertEq(stakingContract.getStakeTimestamp(userOne), block.timestamp, "User's stake timestamp is not correct");
+        
+        vm.warp(block.timestamp + 1 hours);
+
+        //check
+        vm.prank(userOne);
+        stakingContract.claimRewards();
+        assertEq(stakingContract.getStakeTimestamp(userOne), block.timestamp, "User's stake timestamp is not correct");
+    }
+
+    function testCalculateRewards_EmitsEvent() public {
+        // Scenario: User calculates rewards emits event
+        //   Given the user has staked tokens
+        //   When the user calls "claimRewards()"
+        //   Then the "RewardsCalculated" event should be emitted
+
+        //setup
+        uint256 stakeAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
+        _setupStakedUser(userOne, stakeAmount);
+        vm.warp(block.timestamp + 1 hours);
+
+        //act & check
+        vm.expectEmit(true, false, false, true);
+        emit RewardsCalculated(userOne, _calculateNewRewards(userOne));
+        vm.prank(userOne);
+        stakingContract.claimRewards();
+    }
+
+    function testCalculateRewards_AfterPartialUnstake() public {
+        // Scenario: User calculates rewards after partial unstake
+        //   Given the user has staked tokens
+        //   And the user unstakes a portion of their stake
+        //   When the user calls "claimRewards()"
+        //   Then the user should receive the correct amount of rewards
+
+        //setup
+        uint256 stakeAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
+        _setupStakedUser(userOne, stakeAmount);
+        vm.warp(block.timestamp + 1 hours);
+
+        uint256 amountBefore = getStakerBalance(userOne);
+        uint256 newRewards = _calculateNewRewards(userOne);
+
+        vm.prank(userOne);
+        stakingContract.unstake(stakeAmount / 2);
+
+        //act
+        vm.prank(userOne);
+        stakingContract.claimRewards();
+
+        //check
+        assertEq(stakingContract.getRewards(userOne), 0, "User's rewards is not correct");
+        assertEq(getStakerBalance(userOne),newRewards + (stakeAmount / 2), "User's balance is not correct");
+    }
+
+    function testCalculateRewards_AfterMultipleStakes() public {
+        // Scenario: User calculates rewards after multiple stakes
+        //   Given the user has staked tokens multiple times
+        //   When the user calls "claimRewards()" after multiple stakes
+        //   Then the user should receive the correct amount of rewards
+
+        //setup
+        uint256 calculatedRewards;
+        uint256 stakeAmount = 100 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
+        
+
+            for(uint256 i = 0; i < 5; i++){
+
+            
+            _setupStakedUser(userOne, stakeAmount);
+            vm.warp(block.timestamp + 1 hours);
+            calculatedRewards += _calculateNewRewards(userOne);
+
+            }
+
+        //act
+        uint256 amount = getStakerBalance(userOne);
+        
+
+        vm.prank(userOne);
+        stakingContract.claimRewards();
+        calculatedRewards += _calculateNewRewards(userOne);
+        //check
+        assertEq(getStakerBalance(userOne), calculatedRewards, "User's rewards is not correct");
+        }
+
+    function testCalculateRewards_BigAmount() public {
+        // Scenario: User calculates rewards with big amount
+        //   Given the user has staked a large amount of tokens
+        //   When the user calls "claimRewards()"
+        //   Then the user should receive the correct amount of rewards
+
+        //setup
+        uint256 stakeAmount = 1000000000 * DECIMALS;
+        mintToken(address(stakingContract), stakeAmount);
+        _setupStakedUser(userOne, stakeAmount);
+        vm.warp(block.timestamp + 1 hours);
+
+        //act
+        uint256 amount = getStakerBalance(userOne);
+        uint256 newRewards = _calculateNewRewards(userOne);
+
+        vm.prank(userOne);
+        stakingContract.claimRewards();
+
+        //check
+        assertEq(stakingContract.getRewards(userOne), 0, "User's rewards is not correct");
+        assertEq(getStakerBalance(userOne), amount + newRewards, "User's balance is not correct");
+    }
+
+
+
     /*///////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////Events tests////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////*/
 
-    function testEventEmmisson_ofStaked() public {
-        // Scenario: Event "Staked" is emitted when user stakes tokens successfully
-        //
-    }
 
 
 }

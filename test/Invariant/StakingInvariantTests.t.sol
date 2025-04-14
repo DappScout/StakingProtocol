@@ -87,35 +87,27 @@ contract StakingProtocolTest is Test {
     /////////////////////////////////Invariant tests/////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////*/
 
- ///@dev Total staked amount must always equal the sum of all individual user stakes
+    ///@dev Total staked amount must always equal the sum of all individual user stakes
 
     function testCheckInvariants() public {
-
-    ///@dev Total staked amount must always equal the sum of all individual user stakes
+        ///@dev Total staked amount must always equal the sum of all individual user stakes
         uint256 calculatedTotalStakedAmount;
 
-        for(uint256 i=0; i < stakingContract.getStakersLength(); i++){
+        for (uint256 i = 0; i < stakingContract.getStakersLength(); i++) {
             calculatedTotalStakedAmount += stakingContract.getStakedBalanceOf(stakingContract.stakers(i));
         }
 
-        assertEq(calculatedTotalStakedAmount,  stakingContract.s_totalStakedAmount(), "TotalStakedAmount mismatch!");
-    
-    ///@dev Contract's token balance must always be ≥ total staked amount + unclaimed rewards
+        assertEq(calculatedTotalStakedAmount, stakingContract.s_totalStakedAmount(), "TotalStakedAmount mismatch!");
+
+        ///@dev Contract's token balance must always be ≥ total staked amount + unclaimed rewards
 
         assertTrue(getContractBalance() >= calculatedTotalStakedAmount + stakingContract.s_totalRewardsAmount());
-    
-
-    
     }
 
-    function stakeWithChecks(address _user, uint256 _amount) public{
+    function stakeWithChecks(address _user, uint256 _amount) public {
         vm.prank(_user);
         stakingContract.stake(_amount);
-        
+
         testCheckInvariants();
-        
     }
-
-
-
 }
