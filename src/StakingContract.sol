@@ -36,7 +36,7 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     uint256 public constant BASIS_POINTS = 1e18;
     ///@notice Parameter that defines a reward rate per second
     ///@dev 1000000000 = 1000000000 per second == ~3% of staked amount per year
-    uint256 public s_rewardRate = 1_000_000_000; 
+    uint256 public s_rewardRate = 1_000_000_000;
 
     /*//////////////////////////////////////////////////////
                     STRUCTS
@@ -134,7 +134,6 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
             revert StakingContract_ToEarly();
         }
 
-
         ///@notice Check if rewards calculations are needed
 
         if (user.lastTimeStamp != 0) {
@@ -147,7 +146,6 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
         user.stakedAmount = user.stakedAmount + _amount;
 
         s_totalStakedAmount = s_totalStakedAmount + _amount;
-
 
         ///@notice check for reserved token balance for rewards
         _checkReserves();
@@ -279,8 +277,6 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
 
     ///@notice Checks if the contract has enough reserves to cover the total staked amount and rewards + minimal reserve
     function _checkReserves() internal view {
-
-
         uint256 minimalReserveAmount = (s_totalStakedAmount * MINIMAL_CONTRACT_BALANCE_PERCENTAGE) / BASIS_POINTS;
 
         uint256 requiredAmountTotal = s_totalStakedAmount + minimalReserveAmount; // total amount needed to cover staked amount and minimal reserve (check that!!!)
@@ -308,7 +304,7 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
         return stakers.length;
     }
 
-    function getRewards(address _staker) public view returns (uint256){
+    function getRewards(address _staker) public view returns (uint256) {
         return userData[_staker].rewards;
     }
 
