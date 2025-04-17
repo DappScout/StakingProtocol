@@ -74,13 +74,13 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
                     ERRORS
     //////////////////////////////////////////////////////*/
 
-    error StakingContract_WrongAmountGiven();
     error StakingContract_InsufficientBalance();
     error StakingContract_ToEarly();
     error StakingContract_ClaimFailed();
     error StakingContract_SomethingWentWrong();
     error StakingContract_ContractInsufficientBalance();
     error StakingContract_NoRewardsAvailable();
+    error StakingContract_IncorrectInputValue();
 
     /*//////////////////////////////////////////////////////
                     CONSTRUCTOR
@@ -105,27 +105,11 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
      * @dev  Can be done by regular user, but not the owner
      *
      */
-
-    /*
-        Checks:
-            minimal amount
-            not zero
-            rate limit(slash loans)
-            
-        add amount to user ballance - done
-        update the token rewards
-        early unstake penalty mechanism
-    */
-
     function stake(uint256 _amount) public whenNotPaused nonReentrant {
         //check if some dust amounts can disturb the protocol
-        if (_amount == 0 || _amount <= i_minimalAmount) revert StakingContract_WrongAmountGiven();
+        if (_amount == 0 || _amount < i_minimalAmount) revert StakingContract_IncorrectInputValue();
 
         address staker = msg.sender;
-
-        if (staker == address(0)) revert StakingContract_SomethingWentWrong();
-
-        if (i_stakingToken.balanceOf(staker) < _amount) revert StakingContract_InsufficientBalance();
 
         UserData storage user = userData[staker];
 
@@ -148,7 +132,7 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
         s_totalStakedAmount = s_totalStakedAmount + _amount;
 
         ///@notice check for reserved token balance for rewards
-        _checkReserves();
+        _checkReserves(_amount);
 
         i_stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
 
@@ -162,8 +146,8 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     function unstake(uint256 _amount) public whenNotPaused nonReentrant {
         UserData storage user = userData[msg.sender];
 
-        if (_amount > user.stakedAmount) revert StakingContract_WrongAmountGiven(); // check if staked amount is greater than unstake amount
-        if (_amount == 0 || _amount < i_minimalAmount) revert StakingContract_WrongAmountGiven();
+        if (_amount > user.stakedAmount) revert StakingContract_IncorrectInputValue(); // check if staked amount is greater than unstake amount
+        if (_amount == 0 || _amount < i_minimalAmount) revert StakingContract_IncorrectInputValue();
 
         ///@notice Check that reverts a call to prevent too frequent calls.
         if (user.lastTimeStamp != 0 && block.timestamp < user.lastTimeStamp + MINIMAL_TIME_BETWEEN) {
@@ -224,6 +208,8 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     ///@notice Function for admin to change reward rate
     function setRewardRate(uint256 _s_rewardRate) external onlyOwner {
         uint256 oldRate = s_rewardRate;
+
+        if (_s_rewardRate == oldRate || _s_rewardRate == 0) revert StakingContract_IncorrectInputValue();
         //calculate with the old rate
         _calculateAllRewards();
 
@@ -276,14 +262,12 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     }
 
     ///@notice Checks if the contract has enough reserves to cover the total staked amount and rewards + minimal reserve
-    function _checkReserves() internal view {
+    function _checkReserves(uint256 _amount) internal view {
         uint256 minimalReserveAmount = (s_totalStakedAmount * MINIMAL_CONTRACT_BALANCE_PERCENTAGE) / BASIS_POINTS;
-
-        uint256 requiredAmountTotal = s_totalStakedAmount + minimalReserveAmount; // total amount needed to cover staked amount and minimal reserve (check that!!!)
 
         uint256 currentBalance = i_stakingToken.balanceOf(address(this));
 
-        if (currentBalance < minimalReserveAmount) {
+        if (currentBalance < (s_totalStakedAmount - _amount) + minimalReserveAmount) {
             revert StakingContract_ContractInsufficientBalance();
         }
     }
