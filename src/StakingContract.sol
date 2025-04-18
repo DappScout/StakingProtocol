@@ -33,7 +33,7 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     /// @notice Total amount of tokens staked across all users
     /// @dev Used for calculating rewards and contract's checks
     uint256 public s_totalStakedAmount;
-    
+
     /// @notice Total amount of pending rewards of all users
     /// @dev Used for tracking overall reward distribution
     uint256 public s_totalRewardsAmount;
@@ -41,15 +41,15 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     /// @notice Minimal reserve of tokens for rewards as percentage of total staked amount
     /// @dev Represented in basis points (1e17 = 10%)
     uint256 public constant MINIMAL_CONTRACT_BALANCE_PERCENTAGE = 1e17;
-    
+
     /// @notice Minimum time between certain actions
     /// @dev Used to prevent attacks related to quick transactions
     uint256 public constant MINIMAL_TIME_BETWEEN = 1 hours;
-    
+
     /// @notice Basis points for percentage calculations
     /// @dev 1e18 = 100%, so divide by this for percentage calculations
     uint256 public constant BASIS_POINTS = 1e18;
-    
+
     /// @notice Parameter that defines a reward rate per second
     /// @dev Current value (1_000_000_000) results in approximately 3% APY
     /// @dev Can be adjusted by the contract owner
@@ -94,22 +94,22 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     /// @param user Address of the user who staked tokens
     /// @param amount Amount of tokens staked
     event Staked(address indexed user, uint256 amount);
-    
+
     /// @notice Emitted when a user unstakes tokens
     /// @param user Address of the user who unstaked tokens
     /// @param amount Amount of tokens unstaked
     event Unstaked(address indexed user, uint256 amount);
-    
+
     /// @notice Emitted when a user claims their rewards
     /// @param user Address of the user who claimed rewards
     /// @param reward Amount of rewards claimed
     event RewardsClaimed(address indexed user, uint256 reward);
-    
+
     /// @notice Emitted when rewards are calculated for a user
     /// @param user Address of the user whose rewards were calculated
     /// @param reward Updated reward amount after calculation
     event RewardsCalculated(address indexed user, uint256 reward);
-    
+
     /// @notice Emitted when the reward rate is changed
     /// @param oldRate Previous reward rate
     /// @param newRate New reward rate
@@ -121,22 +121,22 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
 
     /// @notice Thrown when user has insufficient token balance for an operation
     error StakingContract_InsufficientBalance();
-    
+
     /// @notice Thrown when attempting an action too soon after a previous action
     error StakingContract_ToEarly();
-    
+
     /// @notice Thrown when claiming rewards fails due to contract issues
     error StakingContract_ClaimFailed();
-    
+
     /// @notice Generic error for unexpected conditions
     error StakingContract_SomethingWentWrong();
-    
+
     /// @notice Thrown when contract doesn't have sufficient balance for operations
     error StakingContract_ContractInsufficientBalance();
-    
+
     /// @notice Thrown when attempting to claim rewards but none are available
     error StakingContract_NoRewardsAvailable();
-    
+
     /// @notice Thrown when an input value is outside acceptable parameters
     error StakingContract_IncorrectInputValue();
 
@@ -174,18 +174,15 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
      * @param _amount Amount of tokens to stake
      */
     function stake(uint256 _amount) public whenNotPaused nonReentrant {
-
         if (_amount == 0 || _amount < i_minimalAmount) revert StakingContract_IncorrectInputValue();
 
         address staker = msg.sender;
 
         UserData storage user = userData[staker];
 
-
         if (user.lastTimeStamp != 0 && block.timestamp < user.lastTimeStamp + MINIMAL_TIME_BETWEEN) {
             revert StakingContract_ToEarly();
         }
-
 
         if (user.lastTimeStamp != 0) {
             _calculateRewards(staker);
