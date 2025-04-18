@@ -1396,11 +1396,13 @@ contract StakingProtocolTest is Test {
     function testClaimRewards_UpdatesTotalRewardsAmount() public setStakeAmount(100) {
         //Scenario: User claims rewards updates total rewards amount
         //Given the user has staked tokens
+        //And time passed
         //When the user calls "claimRewards()"
-        //Then the total rewards amount should be updated
+        //Then the total rewards amount should be updated to 0
 
         //setup
         _setupStakedUser(userOne, stakedAmount);
+        uint256 oldRewards = stakingContract.getTotalRewardsAmount();
         vm.warp(block.timestamp + 1 hours);
 
         //act
@@ -1409,7 +1411,7 @@ contract StakingProtocolTest is Test {
         stakingContract.claimRewards();
 
         //check
-        assertEq(stakingContract.getTotalRewardsAmount(), newRewards, "User's rewards is not correct");
+        assertEq(stakingContract.getTotalRewardsAmount(), oldRewards, "User's rewards is not correct");
     }
 
     function testClaimRewards_EmitEvent() public setStakeAmount(100) {

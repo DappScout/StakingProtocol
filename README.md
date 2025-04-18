@@ -89,6 +89,13 @@ The protocol maintains several critical invariants to ensure security and correc
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
+## To Do
+
+* Add mechanism that will remove users with 0 amount staked from the array
+* Write more unit and itegration tests
+* Write fuzz/invariant tests
+
+
 ## Contact✉️
 ![Simple Staking Protocol Banner](./assets/banner.png)
 
