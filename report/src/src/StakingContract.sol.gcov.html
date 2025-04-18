@@ -32,12 +32,12 @@
             <td></td>
             <td class="headerItem">Lines:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
-            <td class="headerCovTableEntry">82</td>
-            <td class="headerCovTableEntry">82</td>
+            <td class="headerCovTableEntry">81</td>
+            <td class="headerCovTableEntry">81</td>
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2025-04-17 12:27:53</td>
+            <td class="headerValue">2025-04-17 12:47:16</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
@@ -49,8 +49,8 @@
             <td></td>
             <td></td>
             <td class="headerItem">Branches:</td>
-            <td class="headerCovTableEntryHi">93.8&nbsp;%</td>
-            <td class="headerCovTableEntry">16</td>
+            <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
+            <td class="headerCovTableEntry">15</td>
             <td class="headerCovTableEntry">15</td>
           </tr>
                   <tr><td><img src="../../glass.png" width=3 height=3 alt=""></td></tr>
@@ -182,193 +182,191 @@
 <span id="L111"><span class="lineNum">     111</span>                 :             : </span>
 <span id="L112"><span class="lineNum">     112</span>                 :<span class="tlaGNC">         111 :         address staker = msg.sender;</span></span>
 <span id="L113"><span class="lineNum">     113</span>                 :             : </span>
-<span id="L114"><span class="lineNum">     114</span>            [<span class="tlaUNC" title="Branch 0 was not executed"> # </span>]:<span class="tlaGNC">         111 :         if (staker == address(0)) revert StakingContract_SomethingWentWrong();</span></span>
+<span id="L114"><span class="lineNum">     114</span>                 :<span class="tlaGNC">         111 :         UserData storage user = userData[staker];</span></span>
 <span id="L115"><span class="lineNum">     115</span>                 :             : </span>
-<span id="L116"><span class="lineNum">     116</span>                 :<span class="tlaGNC">         111 :         UserData storage user = userData[staker];</span></span>
-<span id="L117"><span class="lineNum">     117</span>                 :             : </span>
-<span id="L118"><span class="lineNum">     118</span>                 :             :         ///@notice Check that reverts a call to prevent too frequent calls.</span>
-<span id="L119"><span class="lineNum">     119</span>            [<span class="tlaGBC" title="Branch 0 was taken 1 time"> + </span>]:<span class="tlaGNC">         111 :         if (user.lastTimeStamp != 0 &amp;&amp; block.timestamp &lt; user.lastTimeStamp + MINIMAL_TIME_BETWEEN) {</span></span>
-<span id="L120"><span class="lineNum">     120</span>                 :<span class="tlaGNC">           1 :             revert StakingContract_ToEarly();</span></span>
-<span id="L121"><span class="lineNum">     121</span>                 :             :         }</span>
+<span id="L116"><span class="lineNum">     116</span>                 :             :         ///@notice Check that reverts a call to prevent too frequent calls.</span>
+<span id="L117"><span class="lineNum">     117</span>            [<span class="tlaGBC" title="Branch 0 was taken 1 time"> + </span>]:<span class="tlaGNC">         111 :         if (user.lastTimeStamp != 0 &amp;&amp; block.timestamp &lt; user.lastTimeStamp + MINIMAL_TIME_BETWEEN) {</span></span>
+<span id="L118"><span class="lineNum">     118</span>                 :<span class="tlaGNC">           1 :             revert StakingContract_ToEarly();</span></span>
+<span id="L119"><span class="lineNum">     119</span>                 :             :         }</span>
+<span id="L120"><span class="lineNum">     120</span>                 :             : </span>
+<span id="L121"><span class="lineNum">     121</span>                 :             :         ///@notice Check if rewards calculations are needed</span>
 <span id="L122"><span class="lineNum">     122</span>                 :             : </span>
-<span id="L123"><span class="lineNum">     123</span>                 :             :         ///@notice Check if rewards calculations are needed</span>
-<span id="L124"><span class="lineNum">     124</span>                 :             : </span>
-<span id="L125"><span class="lineNum">     125</span>         [<span class="tlaGBC" title="Branch 0 was taken 16 times"> + </span><span class="tlaGBC" title="Branch 1 was taken 94 times"> + </span>]:<span class="tlaGNC">         110 :         if (user.lastTimeStamp != 0) {</span></span>
-<span id="L126"><span class="lineNum">     126</span>                 :<span class="tlaGNC">          16 :             _calculateRewards(staker);</span></span>
-<span id="L127"><span class="lineNum">     127</span>                 :             :         } else {</span>
-<span id="L128"><span class="lineNum">     128</span>                 :<span class="tlaGNC">          94 :             stakers.push(staker);</span></span>
-<span id="L129"><span class="lineNum">     129</span>                 :<span class="tlaGNC">          94 :             user.lastTimeStamp = block.timestamp;</span></span>
-<span id="L130"><span class="lineNum">     130</span>                 :             :         }</span>
+<span id="L123"><span class="lineNum">     123</span>         [<span class="tlaGBC" title="Branch 0 was taken 16 times"> + </span><span class="tlaGBC" title="Branch 1 was taken 94 times"> + </span>]:<span class="tlaGNC">         110 :         if (user.lastTimeStamp != 0) {</span></span>
+<span id="L124"><span class="lineNum">     124</span>                 :<span class="tlaGNC">          16 :             _calculateRewards(staker);</span></span>
+<span id="L125"><span class="lineNum">     125</span>                 :             :         } else {</span>
+<span id="L126"><span class="lineNum">     126</span>                 :<span class="tlaGNC">          94 :             stakers.push(staker);</span></span>
+<span id="L127"><span class="lineNum">     127</span>                 :<span class="tlaGNC">          94 :             user.lastTimeStamp = block.timestamp;</span></span>
+<span id="L128"><span class="lineNum">     128</span>                 :             :         }</span>
+<span id="L129"><span class="lineNum">     129</span>                 :             : </span>
+<span id="L130"><span class="lineNum">     130</span>                 :<span class="tlaGNC">         110 :         user.stakedAmount = user.stakedAmount + _amount;</span></span>
 <span id="L131"><span class="lineNum">     131</span>                 :             : </span>
-<span id="L132"><span class="lineNum">     132</span>                 :<span class="tlaGNC">         110 :         user.stakedAmount = user.stakedAmount + _amount;</span></span>
+<span id="L132"><span class="lineNum">     132</span>                 :<span class="tlaGNC">         110 :         s_totalStakedAmount = s_totalStakedAmount + _amount;</span></span>
 <span id="L133"><span class="lineNum">     133</span>                 :             : </span>
-<span id="L134"><span class="lineNum">     134</span>                 :<span class="tlaGNC">         110 :         s_totalStakedAmount = s_totalStakedAmount + _amount;</span></span>
-<span id="L135"><span class="lineNum">     135</span>                 :             : </span>
-<span id="L136"><span class="lineNum">     136</span>                 :             :         ///@notice check for reserved token balance for rewards</span>
-<span id="L137"><span class="lineNum">     137</span>                 :<span class="tlaGNC">         110 :         _checkReserves(_amount);</span></span>
+<span id="L134"><span class="lineNum">     134</span>                 :             :         ///@notice check for reserved token balance for rewards</span>
+<span id="L135"><span class="lineNum">     135</span>                 :<span class="tlaGNC">         110 :         _checkReserves(_amount);</span></span>
+<span id="L136"><span class="lineNum">     136</span>                 :             : </span>
+<span id="L137"><span class="lineNum">     137</span>                 :<span class="tlaGNC">         109 :         i_stakingToken.safeTransferFrom(msg.sender, address(this), _amount);</span></span>
 <span id="L138"><span class="lineNum">     138</span>                 :             : </span>
-<span id="L139"><span class="lineNum">     139</span>                 :<span class="tlaGNC">         109 :         i_stakingToken.safeTransferFrom(msg.sender, address(this), _amount);</span></span>
-<span id="L140"><span class="lineNum">     140</span>                 :             : </span>
-<span id="L141"><span class="lineNum">     141</span>                 :<span class="tlaGNC">         106 :         emit Staked(msg.sender, _amount);</span></span>
-<span id="L142"><span class="lineNum">     142</span>                 :             :     }</span>
-<span id="L143"><span class="lineNum">     143</span>                 :             : </span>
-<span id="L144"><span class="lineNum">     144</span>                 :             :     /**</span>
-<span id="L145"><span class="lineNum">     145</span>                 :             :      * @notice Allows users to withdraw a portion of their staked tokens.</span>
-<span id="L146"><span class="lineNum">     146</span>                 :             :      *         Staking is allowed only when protocol is not paused by the owner</span>
-<span id="L147"><span class="lineNum">     147</span>                 :             :      */</span>
-<span id="L148"><span class="lineNum">     148</span>                 :<span class="tlaGNC">          46 :     function unstake(uint256 _amount) public whenNotPaused nonReentrant {</span></span>
-<span id="L149"><span class="lineNum">     149</span>                 :<span class="tlaGNC">          45 :         UserData storage user = userData[msg.sender];</span></span>
-<span id="L150"><span class="lineNum">     150</span>                 :             : </span>
-<span id="L151"><span class="lineNum">     151</span>            [<span class="tlaGBC" title="Branch 0 was taken 4 times"> + </span>]:<span class="tlaGNC">          45 :         if (_amount &gt; user.stakedAmount) revert StakingContract_IncorrectInputValue(); // check if staked amount is greater than unstake amount</span></span>
-<span id="L152"><span class="lineNum">     152</span>            [<span class="tlaGBC" title="Branch 0 was taken 1 time"> + </span>]:<span class="tlaGNC">          41 :         if (_amount == 0 || _amount &lt; i_minimalAmount) revert StakingContract_IncorrectInputValue();</span></span>
-<span id="L153"><span class="lineNum">     153</span>                 :             : </span>
-<span id="L154"><span class="lineNum">     154</span>                 :             :         ///@notice Check that reverts a call to prevent too frequent calls.</span>
-<span id="L155"><span class="lineNum">     155</span>            [<span class="tlaGBC" title="Branch 0 was taken 1 time"> + </span>]:<span class="tlaGNC">          40 :         if (user.lastTimeStamp != 0 &amp;&amp; block.timestamp &lt; user.lastTimeStamp + MINIMAL_TIME_BETWEEN) {</span></span>
-<span id="L156"><span class="lineNum">     156</span>                 :<span class="tlaGNC">           1 :             revert StakingContract_ToEarly();</span></span>
-<span id="L157"><span class="lineNum">     157</span>                 :             :         }</span>
+<span id="L139"><span class="lineNum">     139</span>                 :<span class="tlaGNC">         106 :         emit Staked(msg.sender, _amount);</span></span>
+<span id="L140"><span class="lineNum">     140</span>                 :             :     }</span>
+<span id="L141"><span class="lineNum">     141</span>                 :             : </span>
+<span id="L142"><span class="lineNum">     142</span>                 :             :     /**</span>
+<span id="L143"><span class="lineNum">     143</span>                 :             :      * @notice Allows users to withdraw a portion of their staked tokens.</span>
+<span id="L144"><span class="lineNum">     144</span>                 :             :      *         Staking is allowed only when protocol is not paused by the owner</span>
+<span id="L145"><span class="lineNum">     145</span>                 :             :      */</span>
+<span id="L146"><span class="lineNum">     146</span>                 :<span class="tlaGNC">          46 :     function unstake(uint256 _amount) public whenNotPaused nonReentrant {</span></span>
+<span id="L147"><span class="lineNum">     147</span>                 :<span class="tlaGNC">          45 :         UserData storage user = userData[msg.sender];</span></span>
+<span id="L148"><span class="lineNum">     148</span>                 :             : </span>
+<span id="L149"><span class="lineNum">     149</span>            [<span class="tlaGBC" title="Branch 0 was taken 4 times"> + </span>]:<span class="tlaGNC">          45 :         if (_amount &gt; user.stakedAmount) revert StakingContract_IncorrectInputValue(); // check if staked amount is greater than unstake amount</span></span>
+<span id="L150"><span class="lineNum">     150</span>            [<span class="tlaGBC" title="Branch 0 was taken 1 time"> + </span>]:<span class="tlaGNC">          41 :         if (_amount == 0 || _amount &lt; i_minimalAmount) revert StakingContract_IncorrectInputValue();</span></span>
+<span id="L151"><span class="lineNum">     151</span>                 :             : </span>
+<span id="L152"><span class="lineNum">     152</span>                 :             :         ///@notice Check that reverts a call to prevent too frequent calls.</span>
+<span id="L153"><span class="lineNum">     153</span>            [<span class="tlaGBC" title="Branch 0 was taken 1 time"> + </span>]:<span class="tlaGNC">          40 :         if (user.lastTimeStamp != 0 &amp;&amp; block.timestamp &lt; user.lastTimeStamp + MINIMAL_TIME_BETWEEN) {</span></span>
+<span id="L154"><span class="lineNum">     154</span>                 :<span class="tlaGNC">           1 :             revert StakingContract_ToEarly();</span></span>
+<span id="L155"><span class="lineNum">     155</span>                 :             :         }</span>
+<span id="L156"><span class="lineNum">     156</span>                 :             : </span>
+<span id="L157"><span class="lineNum">     157</span>                 :<span class="tlaGNC">          39 :         _calculateRewards(msg.sender);</span></span>
 <span id="L158"><span class="lineNum">     158</span>                 :             : </span>
-<span id="L159"><span class="lineNum">     159</span>                 :<span class="tlaGNC">          39 :         _calculateRewards(msg.sender);</span></span>
+<span id="L159"><span class="lineNum">     159</span>                 :<span class="tlaGNC">          39 :         userData[msg.sender].stakedAmount = userData[msg.sender].stakedAmount - _amount;</span></span>
 <span id="L160"><span class="lineNum">     160</span>                 :             : </span>
-<span id="L161"><span class="lineNum">     161</span>                 :<span class="tlaGNC">          39 :         userData[msg.sender].stakedAmount = userData[msg.sender].stakedAmount - _amount;</span></span>
-<span id="L162"><span class="lineNum">     162</span>                 :             : </span>
-<span id="L163"><span class="lineNum">     163</span>                 :             :         ///@notice update total staked amount</span>
-<span id="L164"><span class="lineNum">     164</span>                 :<span class="tlaGNC">          39 :         s_totalStakedAmount = s_totalStakedAmount - _amount;</span></span>
+<span id="L161"><span class="lineNum">     161</span>                 :             :         ///@notice update total staked amount</span>
+<span id="L162"><span class="lineNum">     162</span>                 :<span class="tlaGNC">          39 :         s_totalStakedAmount = s_totalStakedAmount - _amount;</span></span>
+<span id="L163"><span class="lineNum">     163</span>                 :             : </span>
+<span id="L164"><span class="lineNum">     164</span>                 :<span class="tlaGNC">          39 :         i_stakingToken.safeTransfer(msg.sender, _amount);</span></span>
 <span id="L165"><span class="lineNum">     165</span>                 :             : </span>
-<span id="L166"><span class="lineNum">     166</span>                 :<span class="tlaGNC">          39 :         i_stakingToken.safeTransfer(msg.sender, _amount);</span></span>
-<span id="L167"><span class="lineNum">     167</span>                 :             : </span>
-<span id="L168"><span class="lineNum">     168</span>                 :<span class="tlaGNC">          39 :         emit Unstaked(msg.sender, _amount);</span></span>
-<span id="L169"><span class="lineNum">     169</span>                 :             :     }</span>
-<span id="L170"><span class="lineNum">     170</span>                 :             : </span>
-<span id="L171"><span class="lineNum">     171</span>                 :             :     /**</span>
-<span id="L172"><span class="lineNum">     172</span>                 :             :      * @notice Enables users to claim their accumulated rewards</span>
-<span id="L173"><span class="lineNum">     173</span>                 :             :      *         Staking is allowed only when protocol is not paused by the owner</span>
-<span id="L174"><span class="lineNum">     174</span>                 :             :      */</span>
-<span id="L175"><span class="lineNum">     175</span>                 :<span class="tlaGNC">          32 :     function claimRewards() public whenNotPaused nonReentrant {</span></span>
-<span id="L176"><span class="lineNum">     176</span>                 :<span class="tlaGNC">          30 :         address sender = msg.sender;</span></span>
-<span id="L177"><span class="lineNum">     177</span>                 :<span class="tlaGNC">          30 :         uint256 protocolBalance = i_stakingToken.balanceOf(address(this));</span></span>
+<span id="L166"><span class="lineNum">     166</span>                 :<span class="tlaGNC">          39 :         emit Unstaked(msg.sender, _amount);</span></span>
+<span id="L167"><span class="lineNum">     167</span>                 :             :     }</span>
+<span id="L168"><span class="lineNum">     168</span>                 :             : </span>
+<span id="L169"><span class="lineNum">     169</span>                 :             :     /**</span>
+<span id="L170"><span class="lineNum">     170</span>                 :             :      * @notice Enables users to claim their accumulated rewards</span>
+<span id="L171"><span class="lineNum">     171</span>                 :             :      *         Staking is allowed only when protocol is not paused by the owner</span>
+<span id="L172"><span class="lineNum">     172</span>                 :             :      */</span>
+<span id="L173"><span class="lineNum">     173</span>                 :<span class="tlaGNC">          32 :     function claimRewards() public whenNotPaused nonReentrant {</span></span>
+<span id="L174"><span class="lineNum">     174</span>                 :<span class="tlaGNC">          30 :         address sender = msg.sender;</span></span>
+<span id="L175"><span class="lineNum">     175</span>                 :<span class="tlaGNC">          30 :         uint256 protocolBalance = i_stakingToken.balanceOf(address(this));</span></span>
+<span id="L176"><span class="lineNum">     176</span>                 :             : </span>
+<span id="L177"><span class="lineNum">     177</span>            [<span class="tlaGBC" title="Branch 0 was taken 1 time"> + </span>]:<span class="tlaGNC">          30 :         if (userData[sender].lastTimeStamp == 0) revert StakingContract_ClaimFailed();</span></span>
 <span id="L178"><span class="lineNum">     178</span>                 :             : </span>
-<span id="L179"><span class="lineNum">     179</span>            [<span class="tlaGBC" title="Branch 0 was taken 1 time"> + </span>]:<span class="tlaGNC">          30 :         if (userData[sender].lastTimeStamp == 0) revert StakingContract_ClaimFailed();</span></span>
+<span id="L179"><span class="lineNum">     179</span>                 :<span class="tlaGNC">          29 :         _calculateRewards(sender);</span></span>
 <span id="L180"><span class="lineNum">     180</span>                 :             : </span>
-<span id="L181"><span class="lineNum">     181</span>                 :<span class="tlaGNC">          29 :         _calculateRewards(sender);</span></span>
+<span id="L181"><span class="lineNum">     181</span>                 :<span class="tlaGNC">          29 :         uint256 rewardsToSend = userData[sender].rewards;</span></span>
 <span id="L182"><span class="lineNum">     182</span>                 :             : </span>
-<span id="L183"><span class="lineNum">     183</span>                 :<span class="tlaGNC">          29 :         uint256 rewardsToSend = userData[sender].rewards;</span></span>
+<span id="L183"><span class="lineNum">     183</span>            [<span class="tlaGBC" title="Branch 0 was taken 1 time"> + </span>]:<span class="tlaGNC">          29 :         if (rewardsToSend == 0) revert StakingContract_NoRewardsAvailable();</span></span>
 <span id="L184"><span class="lineNum">     184</span>                 :             : </span>
-<span id="L185"><span class="lineNum">     185</span>            [<span class="tlaGBC" title="Branch 0 was taken 1 time"> + </span>]:<span class="tlaGNC">          29 :         if (rewardsToSend == 0) revert StakingContract_NoRewardsAvailable();</span></span>
+<span id="L185"><span class="lineNum">     185</span>                 :<span class="tlaGNC">          28 :         userData[sender].rewards = 0;</span></span>
 <span id="L186"><span class="lineNum">     186</span>                 :             : </span>
-<span id="L187"><span class="lineNum">     187</span>                 :<span class="tlaGNC">          28 :         userData[sender].rewards = 0;</span></span>
-<span id="L188"><span class="lineNum">     188</span>                 :             : </span>
-<span id="L189"><span class="lineNum">     189</span>         [<span class="tlaGBC" title="Branch 0 was taken 27 times"> + </span><span class="tlaGBC" title="Branch 1 was taken 1 time"> + </span>]:<span class="tlaGNC">          28 :         if (protocolBalance &gt;= rewardsToSend) {</span></span>
-<span id="L190"><span class="lineNum">     190</span>                 :<span class="tlaGNC">          27 :             i_stakingToken.safeTransfer(sender, rewardsToSend);</span></span>
-<span id="L191"><span class="lineNum">     191</span>                 :             :         } else {</span>
-<span id="L192"><span class="lineNum">     192</span>                 :<span class="tlaGNC">           1 :             revert StakingContract_ClaimFailed();</span></span>
-<span id="L193"><span class="lineNum">     193</span>                 :             :         }</span>
-<span id="L194"><span class="lineNum">     194</span>                 :             : </span>
-<span id="L195"><span class="lineNum">     195</span>                 :<span class="tlaGNC">          27 :         emit RewardsClaimed(sender, rewardsToSend);</span></span>
-<span id="L196"><span class="lineNum">     196</span>                 :             :     }</span>
-<span id="L197"><span class="lineNum">     197</span>                 :             : </span>
-<span id="L198"><span class="lineNum">     198</span>                 :             :     /**</span>
-<span id="L199"><span class="lineNum">     199</span>                 :             :      * @notice Permits the owner to halt and resume staking operations.</span>
-<span id="L200"><span class="lineNum">     200</span>                 :             :      *         Staking is allowed only when protocol is not paused by the owner</span>
-<span id="L201"><span class="lineNum">     201</span>                 :             :      */</span>
-<span id="L202"><span class="lineNum">     202</span>                 :<span class="tlaGNC">          19 :     function pause() public onlyOwner whenNotPaused {</span></span>
-<span id="L203"><span class="lineNum">     203</span>                 :<span class="tlaGNC">          17 :         _pause();</span></span>
-<span id="L204"><span class="lineNum">     204</span>                 :             :     }</span>
-<span id="L205"><span class="lineNum">     205</span>                 :             : </span>
-<span id="L206"><span class="lineNum">     206</span>                 :<span class="tlaGNC">           8 :     function unpause() public onlyOwner whenPaused {</span></span>
-<span id="L207"><span class="lineNum">     207</span>                 :<span class="tlaGNC">           6 :         _unpause();</span></span>
-<span id="L208"><span class="lineNum">     208</span>                 :             :     }</span>
-<span id="L209"><span class="lineNum">     209</span>                 :             : </span>
-<span id="L210"><span class="lineNum">     210</span>                 :             :     ///@notice Function for admin to change reward rate</span>
-<span id="L211"><span class="lineNum">     211</span>                 :<span class="tlaGNC">           8 :     function setRewardRate(uint256 _s_rewardRate) external onlyOwner {</span></span>
-<span id="L212"><span class="lineNum">     212</span>                 :<span class="tlaGNC">           7 :         uint256 oldRate = s_rewardRate;</span></span>
-<span id="L213"><span class="lineNum">     213</span>                 :             : </span>
-<span id="L214"><span class="lineNum">     214</span>            [<span class="tlaGBC" title="Branch 0 was taken 2 times"> + </span>]:<span class="tlaGNC">           7 :         if (_s_rewardRate == oldRate || _s_rewardRate == 0) revert StakingContract_IncorrectInputValue();</span></span>
-<span id="L215"><span class="lineNum">     215</span>                 :             :         //calculate with the old rate</span>
-<span id="L216"><span class="lineNum">     216</span>                 :<span class="tlaGNC">           5 :         _calculateAllRewards();</span></span>
-<span id="L217"><span class="lineNum">     217</span>                 :             : </span>
-<span id="L218"><span class="lineNum">     218</span>                 :             :         //update to new rate</span>
-<span id="L219"><span class="lineNum">     219</span>                 :<span class="tlaGNC">           5 :         s_rewardRate = _s_rewardRate;</span></span>
-<span id="L220"><span class="lineNum">     220</span>                 :             : </span>
-<span id="L221"><span class="lineNum">     221</span>                 :<span class="tlaGNC">           5 :         emit RewardRateChanged(oldRate, s_rewardRate);</span></span>
-<span id="L222"><span class="lineNum">     222</span>                 :             :     }</span>
-<span id="L223"><span class="lineNum">     223</span>                 :             : </span>
-<span id="L224"><span class="lineNum">     224</span>                 :             :     /*//////////////////////////////////////////////////////</span>
-<span id="L225"><span class="lineNum">     225</span>                 :             :                     HELPER FUNCTIONS</span>
-<span id="L226"><span class="lineNum">     226</span>                 :             :     //////////////////////////////////////////////////////*/</span>
-<span id="L227"><span class="lineNum">     227</span>                 :             : </span>
-<span id="L228"><span class="lineNum">     228</span>                 :             :     /**</span>
-<span id="L229"><span class="lineNum">     229</span>                 :             :      * @notice Calculates and updates rewards for a user based on staking time and amount</span>
-<span id="L230"><span class="lineNum">     230</span>                 :             :      * @dev Uses a rate of s_rewardRate basis points per time unit</span>
-<span id="L231"><span class="lineNum">     231</span>                 :             :      * @param _user Address of the user to calculate rewards for</span>
-<span id="L232"><span class="lineNum">     232</span>                 :             :      */</span>
-<span id="L233"><span class="lineNum">     233</span>                 :<span class="tlaGNC">          94 :     function _calculateRewards(address _user) internal {</span></span>
-<span id="L234"><span class="lineNum">     234</span>                 :             :         // check first stake calulations - potencial precision loss</span>
+<span id="L187"><span class="lineNum">     187</span>         [<span class="tlaGBC" title="Branch 0 was taken 27 times"> + </span><span class="tlaGBC" title="Branch 1 was taken 1 time"> + </span>]:<span class="tlaGNC">          28 :         if (protocolBalance &gt;= rewardsToSend) {</span></span>
+<span id="L188"><span class="lineNum">     188</span>                 :<span class="tlaGNC">          27 :             i_stakingToken.safeTransfer(sender, rewardsToSend);</span></span>
+<span id="L189"><span class="lineNum">     189</span>                 :             :         } else {</span>
+<span id="L190"><span class="lineNum">     190</span>                 :<span class="tlaGNC">           1 :             revert StakingContract_ClaimFailed();</span></span>
+<span id="L191"><span class="lineNum">     191</span>                 :             :         }</span>
+<span id="L192"><span class="lineNum">     192</span>                 :             : </span>
+<span id="L193"><span class="lineNum">     193</span>                 :<span class="tlaGNC">          27 :         emit RewardsClaimed(sender, rewardsToSend);</span></span>
+<span id="L194"><span class="lineNum">     194</span>                 :             :     }</span>
+<span id="L195"><span class="lineNum">     195</span>                 :             : </span>
+<span id="L196"><span class="lineNum">     196</span>                 :             :     /**</span>
+<span id="L197"><span class="lineNum">     197</span>                 :             :      * @notice Permits the owner to halt and resume staking operations.</span>
+<span id="L198"><span class="lineNum">     198</span>                 :             :      *         Staking is allowed only when protocol is not paused by the owner</span>
+<span id="L199"><span class="lineNum">     199</span>                 :             :      */</span>
+<span id="L200"><span class="lineNum">     200</span>                 :<span class="tlaGNC">          19 :     function pause() public onlyOwner whenNotPaused {</span></span>
+<span id="L201"><span class="lineNum">     201</span>                 :<span class="tlaGNC">          17 :         _pause();</span></span>
+<span id="L202"><span class="lineNum">     202</span>                 :             :     }</span>
+<span id="L203"><span class="lineNum">     203</span>                 :             : </span>
+<span id="L204"><span class="lineNum">     204</span>                 :<span class="tlaGNC">           8 :     function unpause() public onlyOwner whenPaused {</span></span>
+<span id="L205"><span class="lineNum">     205</span>                 :<span class="tlaGNC">           6 :         _unpause();</span></span>
+<span id="L206"><span class="lineNum">     206</span>                 :             :     }</span>
+<span id="L207"><span class="lineNum">     207</span>                 :             : </span>
+<span id="L208"><span class="lineNum">     208</span>                 :             :     ///@notice Function for admin to change reward rate</span>
+<span id="L209"><span class="lineNum">     209</span>                 :<span class="tlaGNC">           8 :     function setRewardRate(uint256 _s_rewardRate) external onlyOwner {</span></span>
+<span id="L210"><span class="lineNum">     210</span>                 :<span class="tlaGNC">           7 :         uint256 oldRate = s_rewardRate;</span></span>
+<span id="L211"><span class="lineNum">     211</span>                 :             : </span>
+<span id="L212"><span class="lineNum">     212</span>            [<span class="tlaGBC" title="Branch 0 was taken 2 times"> + </span>]:<span class="tlaGNC">           7 :         if (_s_rewardRate == oldRate || _s_rewardRate == 0) revert StakingContract_IncorrectInputValue();</span></span>
+<span id="L213"><span class="lineNum">     213</span>                 :             :         //calculate with the old rate</span>
+<span id="L214"><span class="lineNum">     214</span>                 :<span class="tlaGNC">           5 :         _calculateAllRewards();</span></span>
+<span id="L215"><span class="lineNum">     215</span>                 :             : </span>
+<span id="L216"><span class="lineNum">     216</span>                 :             :         //update to new rate</span>
+<span id="L217"><span class="lineNum">     217</span>                 :<span class="tlaGNC">           5 :         s_rewardRate = _s_rewardRate;</span></span>
+<span id="L218"><span class="lineNum">     218</span>                 :             : </span>
+<span id="L219"><span class="lineNum">     219</span>                 :<span class="tlaGNC">           5 :         emit RewardRateChanged(oldRate, s_rewardRate);</span></span>
+<span id="L220"><span class="lineNum">     220</span>                 :             :     }</span>
+<span id="L221"><span class="lineNum">     221</span>                 :             : </span>
+<span id="L222"><span class="lineNum">     222</span>                 :             :     /*//////////////////////////////////////////////////////</span>
+<span id="L223"><span class="lineNum">     223</span>                 :             :                     HELPER FUNCTIONS</span>
+<span id="L224"><span class="lineNum">     224</span>                 :             :     //////////////////////////////////////////////////////*/</span>
+<span id="L225"><span class="lineNum">     225</span>                 :             : </span>
+<span id="L226"><span class="lineNum">     226</span>                 :             :     /**</span>
+<span id="L227"><span class="lineNum">     227</span>                 :             :      * @notice Calculates and updates rewards for a user based on staking time and amount</span>
+<span id="L228"><span class="lineNum">     228</span>                 :             :      * @dev Uses a rate of s_rewardRate basis points per time unit</span>
+<span id="L229"><span class="lineNum">     229</span>                 :             :      * @param _user Address of the user to calculate rewards for</span>
+<span id="L230"><span class="lineNum">     230</span>                 :             :      */</span>
+<span id="L231"><span class="lineNum">     231</span>                 :<span class="tlaGNC">          94 :     function _calculateRewards(address _user) internal {</span></span>
+<span id="L232"><span class="lineNum">     232</span>                 :             :         // check first stake calulations - potencial precision loss</span>
+<span id="L233"><span class="lineNum">     233</span>                 :             : </span>
+<span id="L234"><span class="lineNum">     234</span>                 :<span class="tlaGNC">          94 :         UserData storage user = userData[_user];</span></span>
 <span id="L235"><span class="lineNum">     235</span>                 :             : </span>
-<span id="L236"><span class="lineNum">     236</span>                 :<span class="tlaGNC">          94 :         UserData storage user = userData[_user];</span></span>
-<span id="L237"><span class="lineNum">     237</span>                 :             : </span>
-<span id="L238"><span class="lineNum">     238</span>                 :             :         ///@dev skip if user's stake is zero</span>
-<span id="L239"><span class="lineNum">     239</span>            [<span class="tlaGBC" title="Branch 0 was taken 2 times"> + </span>]:<span class="tlaGNC">          94 :         if (user.stakedAmount == 0 || user.lastTimeStamp == 0) {</span></span>
-<span id="L240"><span class="lineNum">     240</span>                 :<span class="tlaGNC">           2 :             return;</span></span>
-<span id="L241"><span class="lineNum">     241</span>                 :             :         }</span>
-<span id="L242"><span class="lineNum">     242</span>                 :             : </span>
-<span id="L243"><span class="lineNum">     243</span>                 :             :         ///@dev time passed since last calculations</span>
-<span id="L244"><span class="lineNum">     244</span>                 :<span class="tlaGNC">          92 :         uint256 passedTime = block.timestamp - user.lastTimeStamp;</span></span>
+<span id="L236"><span class="lineNum">     236</span>                 :             :         ///@dev skip if user's stake is zero</span>
+<span id="L237"><span class="lineNum">     237</span>            [<span class="tlaGBC" title="Branch 0 was taken 2 times"> + </span>]:<span class="tlaGNC">          94 :         if (user.stakedAmount == 0 || user.lastTimeStamp == 0) {</span></span>
+<span id="L238"><span class="lineNum">     238</span>                 :<span class="tlaGNC">           2 :             return;</span></span>
+<span id="L239"><span class="lineNum">     239</span>                 :             :         }</span>
+<span id="L240"><span class="lineNum">     240</span>                 :             : </span>
+<span id="L241"><span class="lineNum">     241</span>                 :             :         ///@dev time passed since last calculations</span>
+<span id="L242"><span class="lineNum">     242</span>                 :<span class="tlaGNC">          92 :         uint256 passedTime = block.timestamp - user.lastTimeStamp;</span></span>
+<span id="L243"><span class="lineNum">     243</span>                 :             : </span>
+<span id="L244"><span class="lineNum">     244</span>                 :<span class="tlaGNC">          92 :         uint256 newRewards = (user.stakedAmount * s_rewardRate * passedTime) / BASIS_POINTS;</span></span>
 <span id="L245"><span class="lineNum">     245</span>                 :             : </span>
-<span id="L246"><span class="lineNum">     246</span>                 :<span class="tlaGNC">          92 :         uint256 newRewards = (user.stakedAmount * s_rewardRate * passedTime) / BASIS_POINTS;</span></span>
-<span id="L247"><span class="lineNum">     247</span>                 :             : </span>
-<span id="L248"><span class="lineNum">     248</span>                 :<span class="tlaGNC">          92 :         user.rewards = user.rewards + newRewards;</span></span>
-<span id="L249"><span class="lineNum">     249</span>                 :<span class="tlaGNC">          92 :         s_totalRewardsAmount = s_totalRewardsAmount + newRewards;</span></span>
+<span id="L246"><span class="lineNum">     246</span>                 :<span class="tlaGNC">          92 :         user.rewards = user.rewards + newRewards;</span></span>
+<span id="L247"><span class="lineNum">     247</span>                 :<span class="tlaGNC">          92 :         s_totalRewardsAmount = s_totalRewardsAmount + newRewards;</span></span>
+<span id="L248"><span class="lineNum">     248</span>                 :             : </span>
+<span id="L249"><span class="lineNum">     249</span>                 :<span class="tlaGNC">          92 :         user.lastTimeStamp = block.timestamp;</span></span>
 <span id="L250"><span class="lineNum">     250</span>                 :             : </span>
-<span id="L251"><span class="lineNum">     251</span>                 :<span class="tlaGNC">          92 :         user.lastTimeStamp = block.timestamp;</span></span>
-<span id="L252"><span class="lineNum">     252</span>                 :             : </span>
-<span id="L253"><span class="lineNum">     253</span>                 :<span class="tlaGNC">          92 :         emit RewardsCalculated(_user, user.rewards);</span></span>
-<span id="L254"><span class="lineNum">     254</span>                 :             :     }</span>
-<span id="L255"><span class="lineNum">     255</span>                 :             : </span>
-<span id="L256"><span class="lineNum">     256</span>                 :<span class="tlaGNC">           5 :     function _calculateAllRewards() internal {</span></span>
-<span id="L257"><span class="lineNum">     257</span>                 :<span class="tlaGNC">           5 :         for (uint256 i = 0; i &lt; stakers.length; i++) {</span></span>
-<span id="L258"><span class="lineNum">     258</span>                 :<span class="tlaGNC">          10 :             address stakersAddress = stakers[i];</span></span>
-<span id="L259"><span class="lineNum">     259</span>                 :             : </span>
-<span id="L260"><span class="lineNum">     260</span>            [<span class="tlaGBC" title="Branch 0 was taken 10 times"> + </span>]:<span class="tlaGNC">          10 :             if (userData[stakersAddress].stakedAmount &gt; 0) {</span></span>
-<span id="L261"><span class="lineNum">     261</span>                 :<span class="tlaGNC">          10 :                 _calculateRewards(stakersAddress);</span></span>
-<span id="L262"><span class="lineNum">     262</span>                 :             :             }</span>
-<span id="L263"><span class="lineNum">     263</span>                 :             :         }</span>
-<span id="L264"><span class="lineNum">     264</span>                 :             :     }</span>
-<span id="L265"><span class="lineNum">     265</span>                 :             : </span>
-<span id="L266"><span class="lineNum">     266</span>                 :             :     ///@notice Checks if the contract has enough reserves to cover the total staked amount and rewards + minimal reserve</span>
-<span id="L267"><span class="lineNum">     267</span>                 :<span class="tlaGNC">         110 :     function _checkReserves(uint256 _amount) internal view {</span></span>
-<span id="L268"><span class="lineNum">     268</span>                 :<span class="tlaGNC">         110 :         uint256 minimalReserveAmount = (s_totalStakedAmount * MINIMAL_CONTRACT_BALANCE_PERCENTAGE) / BASIS_POINTS;</span></span>
+<span id="L251"><span class="lineNum">     251</span>                 :<span class="tlaGNC">          92 :         emit RewardsCalculated(_user, user.rewards);</span></span>
+<span id="L252"><span class="lineNum">     252</span>                 :             :     }</span>
+<span id="L253"><span class="lineNum">     253</span>                 :             : </span>
+<span id="L254"><span class="lineNum">     254</span>                 :<span class="tlaGNC">           5 :     function _calculateAllRewards() internal {</span></span>
+<span id="L255"><span class="lineNum">     255</span>                 :<span class="tlaGNC">           5 :         for (uint256 i = 0; i &lt; stakers.length; i++) {</span></span>
+<span id="L256"><span class="lineNum">     256</span>                 :<span class="tlaGNC">          10 :             address stakersAddress = stakers[i];</span></span>
+<span id="L257"><span class="lineNum">     257</span>                 :             : </span>
+<span id="L258"><span class="lineNum">     258</span>            [<span class="tlaGBC" title="Branch 0 was taken 10 times"> + </span>]:<span class="tlaGNC">          10 :             if (userData[stakersAddress].stakedAmount &gt; 0) {</span></span>
+<span id="L259"><span class="lineNum">     259</span>                 :<span class="tlaGNC">          10 :                 _calculateRewards(stakersAddress);</span></span>
+<span id="L260"><span class="lineNum">     260</span>                 :             :             }</span>
+<span id="L261"><span class="lineNum">     261</span>                 :             :         }</span>
+<span id="L262"><span class="lineNum">     262</span>                 :             :     }</span>
+<span id="L263"><span class="lineNum">     263</span>                 :             : </span>
+<span id="L264"><span class="lineNum">     264</span>                 :             :     ///@notice Checks if the contract has enough reserves to cover the total staked amount and rewards + minimal reserve</span>
+<span id="L265"><span class="lineNum">     265</span>                 :<span class="tlaGNC">         110 :     function _checkReserves(uint256 _amount) internal view {</span></span>
+<span id="L266"><span class="lineNum">     266</span>                 :<span class="tlaGNC">         110 :         uint256 minimalReserveAmount = (s_totalStakedAmount * MINIMAL_CONTRACT_BALANCE_PERCENTAGE) / BASIS_POINTS;</span></span>
+<span id="L267"><span class="lineNum">     267</span>                 :             : </span>
+<span id="L268"><span class="lineNum">     268</span>                 :<span class="tlaGNC">         110 :         uint256 currentBalance = i_stakingToken.balanceOf(address(this));</span></span>
 <span id="L269"><span class="lineNum">     269</span>                 :             : </span>
-<span id="L270"><span class="lineNum">     270</span>                 :<span class="tlaGNC">         110 :         uint256 currentBalance = i_stakingToken.balanceOf(address(this));</span></span>
-<span id="L271"><span class="lineNum">     271</span>                 :             : </span>
-<span id="L272"><span class="lineNum">     272</span>            [<span class="tlaGBC" title="Branch 0 was taken 1 time"> + </span>]:<span class="tlaGNC">         110 :         if (currentBalance &lt; (s_totalStakedAmount - _amount) + minimalReserveAmount) {</span></span>
-<span id="L273"><span class="lineNum">     273</span>                 :<span class="tlaGNC">           1 :             revert StakingContract_ContractInsufficientBalance();</span></span>
-<span id="L274"><span class="lineNum">     274</span>                 :             :         }</span>
-<span id="L275"><span class="lineNum">     275</span>                 :             :     }</span>
-<span id="L276"><span class="lineNum">     276</span>                 :             : </span>
-<span id="L277"><span class="lineNum">     277</span>                 :             :     /*//////////////////////////////////////////////////////</span>
-<span id="L278"><span class="lineNum">     278</span>                 :             :                     GETTER FUNCTIONS</span>
-<span id="L279"><span class="lineNum">     279</span>                 :             :     //////////////////////////////////////////////////////*/</span>
-<span id="L280"><span class="lineNum">     280</span>                 :             : </span>
-<span id="L281"><span class="lineNum">     281</span>                 :<span class="tlaGNC">          99 :     function getStakedBalanceOf(address _staker) public view returns (uint256) {</span></span>
-<span id="L282"><span class="lineNum">     282</span>                 :<span class="tlaGNC">          99 :         return userData[_staker].stakedAmount;</span></span>
-<span id="L283"><span class="lineNum">     283</span>                 :             :     }</span>
-<span id="L284"><span class="lineNum">     284</span>                 :             : </span>
-<span id="L285"><span class="lineNum">     285</span>                 :<span class="tlaGNC">          52 :     function getStakeTimestamp(address _staker) public view returns (uint256) {</span></span>
-<span id="L286"><span class="lineNum">     286</span>                 :<span class="tlaGNC">          52 :         return userData[_staker].lastTimeStamp;</span></span>
-<span id="L287"><span class="lineNum">     287</span>                 :             :     }</span>
-<span id="L288"><span class="lineNum">     288</span>                 :             : </span>
-<span id="L289"><span class="lineNum">     289</span>                 :<span class="tlaGNC">           2 :     function getStakersLength() public view returns (uint256) {</span></span>
-<span id="L290"><span class="lineNum">     290</span>                 :<span class="tlaGNC">           2 :         return stakers.length;</span></span>
-<span id="L291"><span class="lineNum">     291</span>                 :             :     }</span>
-<span id="L292"><span class="lineNum">     292</span>                 :             : </span>
-<span id="L293"><span class="lineNum">     293</span>                 :<span class="tlaGNC">          27 :     function getRewards(address _staker) public view returns (uint256) {</span></span>
-<span id="L294"><span class="lineNum">     294</span>                 :<span class="tlaGNC">          27 :         return userData[_staker].rewards;</span></span>
-<span id="L295"><span class="lineNum">     295</span>                 :             :     }</span>
-<span id="L296"><span class="lineNum">     296</span>                 :             : </span>
-<span id="L297"><span class="lineNum">     297</span>                 :<span class="tlaGNC">           1 :     function getTotalRewardsAmount() public view returns (uint256) {</span></span>
-<span id="L298"><span class="lineNum">     298</span>                 :<span class="tlaGNC">           1 :         return s_totalRewardsAmount;</span></span>
-<span id="L299"><span class="lineNum">     299</span>                 :             :     }</span>
-<span id="L300"><span class="lineNum">     300</span>                 :             : }</span>
+<span id="L270"><span class="lineNum">     270</span>            [<span class="tlaGBC" title="Branch 0 was taken 1 time"> + </span>]:<span class="tlaGNC">         110 :         if (currentBalance &lt; (s_totalStakedAmount - _amount) + minimalReserveAmount) {</span></span>
+<span id="L271"><span class="lineNum">     271</span>                 :<span class="tlaGNC">           1 :             revert StakingContract_ContractInsufficientBalance();</span></span>
+<span id="L272"><span class="lineNum">     272</span>                 :             :         }</span>
+<span id="L273"><span class="lineNum">     273</span>                 :             :     }</span>
+<span id="L274"><span class="lineNum">     274</span>                 :             : </span>
+<span id="L275"><span class="lineNum">     275</span>                 :             :     /*//////////////////////////////////////////////////////</span>
+<span id="L276"><span class="lineNum">     276</span>                 :             :                     GETTER FUNCTIONS</span>
+<span id="L277"><span class="lineNum">     277</span>                 :             :     //////////////////////////////////////////////////////*/</span>
+<span id="L278"><span class="lineNum">     278</span>                 :             : </span>
+<span id="L279"><span class="lineNum">     279</span>                 :<span class="tlaGNC">          99 :     function getStakedBalanceOf(address _staker) public view returns (uint256) {</span></span>
+<span id="L280"><span class="lineNum">     280</span>                 :<span class="tlaGNC">          99 :         return userData[_staker].stakedAmount;</span></span>
+<span id="L281"><span class="lineNum">     281</span>                 :             :     }</span>
+<span id="L282"><span class="lineNum">     282</span>                 :             : </span>
+<span id="L283"><span class="lineNum">     283</span>                 :<span class="tlaGNC">          52 :     function getStakeTimestamp(address _staker) public view returns (uint256) {</span></span>
+<span id="L284"><span class="lineNum">     284</span>                 :<span class="tlaGNC">          52 :         return userData[_staker].lastTimeStamp;</span></span>
+<span id="L285"><span class="lineNum">     285</span>                 :             :     }</span>
+<span id="L286"><span class="lineNum">     286</span>                 :             : </span>
+<span id="L287"><span class="lineNum">     287</span>                 :<span class="tlaGNC">           2 :     function getStakersLength() public view returns (uint256) {</span></span>
+<span id="L288"><span class="lineNum">     288</span>                 :<span class="tlaGNC">           2 :         return stakers.length;</span></span>
+<span id="L289"><span class="lineNum">     289</span>                 :             :     }</span>
+<span id="L290"><span class="lineNum">     290</span>                 :             : </span>
+<span id="L291"><span class="lineNum">     291</span>                 :<span class="tlaGNC">          27 :     function getRewards(address _staker) public view returns (uint256) {</span></span>
+<span id="L292"><span class="lineNum">     292</span>                 :<span class="tlaGNC">          27 :         return userData[_staker].rewards;</span></span>
+<span id="L293"><span class="lineNum">     293</span>                 :             :     }</span>
+<span id="L294"><span class="lineNum">     294</span>                 :             : </span>
+<span id="L295"><span class="lineNum">     295</span>                 :<span class="tlaGNC">           1 :     function getTotalRewardsAmount() public view returns (uint256) {</span></span>
+<span id="L296"><span class="lineNum">     296</span>                 :<span class="tlaGNC">           1 :         return s_totalRewardsAmount;</span></span>
+<span id="L297"><span class="lineNum">     297</span>                 :             :     }</span>
+<span id="L298"><span class="lineNum">     298</span>                 :             : }</span>
         </pre>
               </td>
             </tr>
