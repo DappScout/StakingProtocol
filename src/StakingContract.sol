@@ -123,7 +123,7 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
     error StakingContract_InsufficientBalance();
 
     /// @notice Thrown when attempting an action too soon after a previous action
-    error StakingContract_ToEarly();
+    error StakingContract_TooEarly();
 
     /// @notice Thrown when claiming rewards fails due to contract issues
     error StakingContract_ClaimFailed();
@@ -181,7 +181,7 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
         UserData storage user = userData[staker];
 
         if (user.lastTimeStamp != 0 && block.timestamp < user.lastTimeStamp + MINIMAL_TIME_BETWEEN) {
-            revert StakingContract_ToEarly();
+            revert StakingContract_TooEarly();
         }
 
         if (user.lastTimeStamp != 0) {
@@ -218,7 +218,7 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
         if (_amount == 0 || _amount < i_minimalAmount) revert StakingContract_IncorrectInputValue();
 
         if (user.lastTimeStamp != 0 && block.timestamp < user.lastTimeStamp + MINIMAL_TIME_BETWEEN) {
-            revert StakingContract_ToEarly();
+            revert StakingContract_TooEarly();
         }
 
         _calculateRewards(msg.sender);
@@ -290,17 +290,17 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
      * @dev Calculates all pending rewards with the old rate before changing
      * @dev Emits a RewardRateChanged event with old and new rates
      * @dev Can only be called by the contract owner
-     * @param _s_rewardRate The new reward rate to be set
+     * @param _rewardRate The new reward rate to be set
      */
-    function setRewardRate(uint256 _s_rewardRate) external onlyOwner {
+    function setRewardRate(uint256 _rewardRate) external onlyOwner {
         uint256 oldRate = s_rewardRate;
 
-        if (_s_rewardRate == oldRate || _s_rewardRate == 0) revert StakingContract_IncorrectInputValue();
+        if (_rewardRate == oldRate || _rewardRate == 0) revert StakingContract_IncorrectInputValue();
         //calculate with the old rate
         _calculateAllRewards();
 
         //update to new rate
-        s_rewardRate = _s_rewardRate;
+        s_rewardRate = _rewardRate;
 
         emit RewardRateChanged(oldRate, s_rewardRate);
     }
@@ -318,7 +318,6 @@ contract StakingContract is Ownable, Pausable, ReentrancyGuard {
      * @param _user Address of the user to calculate rewards for
      */
     function _calculateRewards(address _user) internal {
-        // check first stake calulations - potencial precision loss
 
         UserData storage user = userData[_user];
 

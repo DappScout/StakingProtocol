@@ -702,7 +702,7 @@ contract StakingProtocolTest is Test {
 
         //act & check
         _setupStakedUser(userOne, stakedAmount);
-        vm.expectRevert(abi.encodeWithSignature("StakingContract_ToEarly()"));
+        vm.expectRevert(abi.encodeWithSignature("StakingContract_TooEarly()"));
         vm.prank(userOne);
         stakingContract.stake(stakedAmount);
     }
@@ -1143,7 +1143,7 @@ contract StakingProtocolTest is Test {
         vm.startPrank(userOne);
         stakingContract.unstake(stakedAmount / 2);
 
-        vm.expectRevert(abi.encodeWithSignature("StakingContract_ToEarly()"));
+        vm.expectRevert(abi.encodeWithSignature("StakingContract_TooEarly()"));
         stakingContract.unstake(stakedAmount / 2);
         vm.stopPrank();
 
