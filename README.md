@@ -1,10 +1,10 @@
-# Simple Staking Protocol 🔐
+# ERC20 Staking Protocol 🔐
 
 A secure ERC20 token staking protocol with dynamic reward calculation
 
 ## Overview 🔍
 
-Simple Staking Protocol allows users to stake their ERC20 tokens and earn rewards over time. The protocol includes security measures like pausing capabilities, reentrancy protection, rate limiting, and owner-only administrative functions.
+ Staking Protocol allows users to stake their ERC20 tokens and earn rewards over time. The protocol includes security measures like pausing capabilities, reentrancy protection, rate limiting, and owner-only administrative functions.
 
 ## Features 🧱
 
